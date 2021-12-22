@@ -1,12 +1,20 @@
 # 安川MA2010机械臂 + Robotiq 2F-140夹爪视觉抓取 (持续更新...)
+**功能：在ROS平台上，使用realsense相机引导安川MA2010机械臂用Robotiq 2F-140夹爪进行抓取**
+---
 
 ## 环境
-**Ubuntu16.04 + ROS kinetic**
+**Ubuntu16.04 + ROS kinetic + Python3.7**
 ## 安装
 
 ### 前置条件
   1. 安装[ROS](https://wiki.ros.org/kinetic/Installation/Ubuntu)
   2. 安装[realsense-ros](https://github.com/IntelRealSense/realsense-ros)
+
+
+### 安川机械臂驱动和夹爪驱动
+1. 安川机械臂机械臂驱动使用[ros-industrial/motoman](https://github.com/ros-industrial/motoman)，本仓库删除了一些无关的内容，仅保留ma2010_support
+2. Robotiq 2F-140使用[Danfoa/robotiq_2finger_grippers](https://github.com/Danfoa/robotiq_2finger_grippers)的代码进行驱动，已集成在本仓库中。
+
 
 ### 安装本仓库
 1. 创建工作空间

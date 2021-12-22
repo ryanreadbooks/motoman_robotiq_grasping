@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: motoman_ma2010_support
+    relative_path: urdf/ma2010_with_robotiq140.xacro
+    xacro_args: "--inorder "
+  SRDF:
+    relative_path: config/ma2010_robotiq140.srdf
+  CONFIG:
+    author_name: ryanreadbooks
+    author_email: no_provided@email.com
+    generated_timestamp: 1640180156

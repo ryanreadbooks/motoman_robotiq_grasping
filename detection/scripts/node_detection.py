@@ -129,6 +129,7 @@ if __name__ == '__main__':
 
     grasp_detector = PlanarGraspDetector(model_path=rospy.get_param('~model_path'), camera_params=d435i)
 
+    # TODO 测试用
     rate = rospy.Rate(10) # 10hz
     while not rospy.is_shutdown():
         infer()

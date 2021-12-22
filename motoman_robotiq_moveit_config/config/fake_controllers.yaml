@@ -1,0 +1,12 @@
+controller_list:
+  - name: fake_manipulator_controller
+    joints:
+      - joint_1_s
+      - joint_2_l
+      - joint_3_u
+      - joint_4_r
+      - joint_5_b
+      - joint_6_t
+  - name: fake_gripper_controller
+    joints:
+      - finger_joint

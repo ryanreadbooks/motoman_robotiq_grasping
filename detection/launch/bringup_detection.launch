@@ -14,7 +14,7 @@
         <param name="intrinsics/fov" type="double" value="68" />
 
         <!-- 相机外参 -->
-        <!-- TODO 未确定，后续需要标定得到 -->
+        <!-- TODO 未确定，后续需要标定得到 ，是在这里配置还是使用tf2进行外参的发布-->
         <param name="extrinsics/x"  type="double" value="1.65911" />
         <param name="extrinsics/y"  type="double" value="-0.599307" />
         <param name="extrinsics/z"  type="double" value="0.340049" />

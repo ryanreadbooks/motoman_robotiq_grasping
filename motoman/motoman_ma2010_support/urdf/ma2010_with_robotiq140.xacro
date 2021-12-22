@@ -1,0 +1,27 @@
+<?xml version="1.0" ?>
+<robot name="ma2010_robotiq140" xmlns:xacro="http://ros.org/wiki/xacro">
+  <!--  include -->
+  <xacro:include filename="$(find motoman_ma2010_support)/urdf/ma2010_macro.xacro" />
+  <xacro:include filename="$(find robotiq_2f_140_gripper_visualization)/urdf/robotiq_arg2f_140_model_macro.xacro" />
+
+  <!-- ma2010 arm -->
+  <xacro:motoman_ma2010 prefix=""/>
+  <!-- robotiq 140 -->
+  <xacro:robotiq_arg2f_140 prefix="" />
+
+  <!-- connect arm and gripper -->
+  <joint name="tool0-gripper_base" type="fixed">
+  	<parent link= "tool0" />
+  	<child link = "robotiq_arg2f_base_link" />
+  	<origin xyz=" 0.0 0.0 0.0" rpy="0.0 ${pi/2} 0.0" />
+  </joint>
+  
+  <!-- values in orign tag must be determined through TCP calibration -->
+  <link name="grasping_frame" />
+  <joint name="grasping_frame_joint" type="fixed">
+    <parent link="tool0"/>
+	<child link="grasping_frame"/>
+	<origin xyz=" 0.23 0.0 0.0" rpy="0.0 0.0 0.0" />
+  </joint>	  
+
+</robot>
