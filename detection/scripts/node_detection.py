@@ -81,7 +81,8 @@ def infer():
                 # 发布TF
                 stamped_transform = gmsg.TransformStamped()
                 stamped_transform.header.stamp = rospy.Time.now()
-                stamped_transform.header.frame_id = 'grasp_candidate'
+                stamped_transform.header.frame_id = 'camera_link'
+                stamped_transform.child_frame_id = 'grasp_candidate'
                 stamped_transform.transform.translation.x = tcp_cam[0]
                 stamped_transform.transform.translation.y = tcp_cam[1]
                 stamped_transform.transform.translation.z = tcp_cam[2]
@@ -93,6 +94,7 @@ def infer():
                 stamped_transform.transform.rotation.w = qw
 
                 transform_br.sendTransform(stamped_transform)
+
                 result_img_publisher.publish(_cv_bridge.cv2_to_imgmsg(img_with_grasps[:,:,::-1]))   # 格式转换
                 rospy.loginfo('Grasp detection succeed.')
         except Exception as e:
