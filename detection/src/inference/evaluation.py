@@ -1,3 +1,4 @@
+# coding=utf-8
 """
 written by ryanreadbooks
 date: 2021/11/26
@@ -9,9 +10,9 @@ from scipy.spatial import kdtree
 
 from skimage.draw import line_aa
 
-from key_constants_pool import *
-from utils import polygon_iou
-from grasp_repr import GraspInLine
+from .key_constants_pool import *
+from .utils import polygon_iou
+from .grasp_repr import GraspInLine
 
 
 def draw_rect_on_img_with_corners(img, corners):

@@ -1,3 +1,4 @@
+# coding=utf-8
 """
 written by ryanreadbooks
 date: 2021/11/25
@@ -6,7 +7,9 @@ function: 抓取的表示类实现，有基于矩形框的表示和基于直线�
 from typing import Tuple
 
 import numpy as np
+import open3d as o3d
 from skimage.draw import disk, line_aa
+from pytransform3d import rotations as pr, transformations as pt
 
 
 class GraspCenter:
@@ -284,3 +287,186 @@ class UpdateGraspRegion:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.grasp.rr, self.grasp.cc = \
             disk(center=(self.grasp.center.y, self.grasp.center.x), radius=self.grasp.width / 3, shape=self.grasp.shape)
+
+
+def check_equal(x, y, tol=1e-7):
+    if isinstance(x, np.ndarray) and isinstance(y, np.ndarray):
+        diff = x - y
+        return np.mean(np.abs(diff)) < tol
+    else:
+        return np.abs(x - y) < tol
+
+
+class GripperFrame:
+    """
+    表示坐标轴，包含三个坐标轴的方向向量
+    """
+
+    BaseX = np.array([1., 0., 0.])
+    BaseY = np.array([0., 1., 0.])
+    BaseZ = np.array([0., 0., 1.])
+    ORIGIN = np.array([0., 0., 0.])
+
+    def __init__(self, x, y, z, center: np.ndarray):
+        """
+
+        :param x: x轴向量
+        :param y: y轴向量
+        :param z: z轴向量
+        :param center: 原点所在坐标
+        """
+        self._x = x
+        self._y = y
+        self._z = z
+        self._check_orthogonal()
+
+        self.center = center.reshape(3, )
+
+    @property
+    def x(self):
+        return self._x
+
+    @property
+    def y(self):
+        return self._y
+
+    @property
+    def z(self):
+        return self._z
+
+    @x.setter
+    def x(self, new_x):
+        align_R = GripperFrame._get_R_aligning_vectors(self._x, new_x)
+        self._x = new_x
+        self._y = align_R @ self._y
+        self._z = align_R @ self._z
+
+    @y.setter
+    def y(self, new_y):
+        align_R = GripperFrame._get_R_aligning_vectors(self._y, new_y)
+        self._y = new_y
+        self._x = align_R @ self._x
+        self._z = align_R @ self._z
+
+    @z.setter
+    def z(self, new_z):
+        align_R = GripperFrame._get_R_aligning_vectors(self._z, new_z)
+        self._z = new_z
+        self._x = align_R @ self._x
+        self._y = align_R @ self._y
+
+    @property
+    def pose(self):
+        return self.to_6dpose()
+
+    @staticmethod
+    def base_frame():
+        return GripperFrame(GripperFrame.BaseX, GripperFrame.BaseY, GripperFrame.BaseZ, GripperFrame.ORIGIN)
+
+    def _check_orthogonal(self, tol=3e-5):
+        """
+        检查是否三个轴是否垂直
+        :return:
+        """
+        xy = self.x @ self.y
+        xz = self.x @ self.z
+        yz = self.y @ self.z
+
+        if check_equal(xy, 0., tol) and check_equal(xz, 0., tol) and check_equal(yz, 0., tol):
+            return
+        else:
+            raise ValueError(f'The given axes not orthogonal with each other, x={self.x}, y={self.y}, z={self.z}, '
+                             f'xy={xy}, xz={xz}, yz={yz}')
+
+    @staticmethod
+    def init(center, dz, rot):
+        """
+        根据给定的z轴和旋转进行初始化
+        :param dz:
+        :param rot: 单位rad
+        :param center:
+        :return:
+        """
+        firstR_ax_an = pr.axis_angle_from_two_directions(GripperFrame.BaseZ, dz)
+        firstR = pr.matrix_from_axis_angle(firstR_ax_an)
+        firstT = pt.transform_from(firstR, center)
+        # rotate about z axis
+        rotation_z = np.array([[np.cos(rot), -np.sin(rot), 0],
+                               [np.sin(rot), np.cos(rot), 0],
+                               [0, 0, 1]])
+        rotT = pt.transform_from(rotation_z, np.array([0, 0, 0]))
+
+        fullT = firstT @ rotT
+        base = GripperFrame.base_frame()
+        base.transform(fullT)
+
+        return base
+
+    def recover_in_plane_rot_angle(self):
+        firstR_ax_an = pr.axis_angle_from_two_directions(GripperFrame.BaseZ, self.z)
+        firstR = pr.matrix_from_axis_angle(firstR_ax_an)
+        firstT = pt.transform_from(firstR, self.center)
+        fullT = np.zeros((4, 4))
+        fullT[:3, 0] = self._x
+        fullT[:3, 1] = self._y
+        fullT[:3, 2] = self._z
+        fullT[:3, 3] = self.center
+        fullT[3, 3] = 1.
+
+        rotT = np.linalg.inv(firstT) @ fullT
+        angle = np.arccos(rotT[0, 0])
+
+        return angle
+
+    @staticmethod
+    def _get_R_aligning_vectors(v1, v2):
+        ag_ax = pr.axis_angle_from_two_directions(v1, v2)  # 轴角表示
+        return pr.matrix_from_axis_angle(ag_ax)
+
+    def to_open3d_mesh(self):
+        point_x = (self.x * 0.03 + self.center).tolist()
+        point_y = (self.y * 0.03 + self.center).tolist()
+        point_z = (self.z * 0.02 + self.center).tolist()
+        points = [self.center.tolist(), point_x, point_y, point_z]
+        lines = [[0, 1], [0, 2], [0, 3]]
+        colors = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+        line_set = o3d.geometry.LineSet(
+            points=o3d.utility.Vector3dVector(points),
+            lines=o3d.utility.Vector2iVector(lines))
+        line_set.colors = o3d.utility.Vector3dVector(colors)
+
+        return line_set
+
+    def transform(self, T):
+        """
+        对整个坐标轴施加变换T
+        :param T: 4x4的齐次变换矩阵
+        :return:
+        """
+        # todo some failed here
+        self._z = pt.transform(T, pt.vector_to_direction(self.z), strict_check=False)[:-1]
+        self._y = pt.transform(T, pt.vector_to_direction(self.y), strict_check=False)[:-1]
+        self._x = pt.transform(T, pt.vector_to_direction(self.x), strict_check=False)[:-1]
+        self.center = pt.transform(T, pt.vector_to_point(self.center), strict_check=False)[:-1]
+
+    def to_6dpose(self):
+        rotation = np.array([self.x, self.y, self.z]).T
+        return pt.transform_from(rotation, self.center)
+
+    @staticmethod
+    def from_6dpose(pose):
+        center = pose[:3, 3]
+        x = pose[:3, 0]
+        y = pose[:3, 1]
+        z = pose[:3, 2]
+        return GripperFrame(x, y, z, center)
+
+    def __str__(self):
+        return f'Center={self.center}, dx={self.x}, dy={self.y}, dz={self.z}'
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __eq__(self, other):
+        return check_equal(self.x, other.x) and check_equal(self.y, other.y) and check_equal(self.z, other.z) and check_equal(self.center, other.center)
+

@@ -1,3 +1,4 @@
+# coding=utf-8
 """
 高度封装的检测类，只需要给定rgb或者depth信息，就返回检测到的抓取结果
 """
@@ -10,10 +11,11 @@ import numpy as np
 import torch
 from scipy.spatial import KDTree
 
-from network import PSPNet
-from infer_tools import pack_single_image, decode_graspmap, decode_net_output
-from key_constants_pool import *
-from utils import *
+from .network import PSPNet
+from .infer_tools import pack_single_image, decode_graspmap, decode_net_output
+from .key_constants_pool import *
+from .utils import *
+from .grasp_repr import *
 
 
 class CameraParams:
@@ -107,7 +109,13 @@ class PlanarGraspDetector:
         img_with_grasps, pred_grasp_pts = decode_graspmap(graspness, angle, width, 
                                                         cropped_rgb, self.angles_table, 
                                                         n_grasp=5, mode='local')
-        self.gen_grasp_pose(pred_grasp_pts, angle, width, img, depth)
+        
+        if pred_grasp_pts.shape[0] == 0:
+            # 没有检测到结果
+            return (False, )
+        tcp_cam, rot_mat_cam = self.gen_grasp_pose(pred_grasp_pts, angle, width, img, depth)
+
+        return True, tcp_cam, rot_mat_cam, img_with_grasps
 
 
     def gen_grasp_pose(self, grasp_pts, angle_map, width_map, rgb_img, depth_img):
@@ -117,6 +125,8 @@ class PlanarGraspDetector:
         :param grasp_pts: 提取处的在二维图像上的抓取点， shape=(n, 2) -> [y, x]
         :param angle_map: 角度图，shape=(h, w)
         :param widht_map: 宽度图，shape=(h, w)
+        :param rgb_img: 原图RGB，shape=(H, W, 3)
+        :param depth_img: 深度图，shape=(H, W)
         """
         # 1. 从中选出概率最高的grasp执行
         # TODO 可能要更加合理的grasp selection scheme
@@ -146,10 +156,24 @@ class PlanarGraspDetector:
         )
         cloud.normalize_normals()
         cloud.orient_normals_towards_camera_location()  # 法向量指向相机位置
+
         # 为抓取点找到点云中最近的点，并且取出法向量
         tree = KDTree(np.asarray(cloud.points), leafsize=16)
         distances, indices = tree.query(grasp_point_cam_3d, k=1, workers=4)
         cloud_normals = np.asarray(cloud.normals)
         grasps_orientation = cloud_normals[indices]    # (3,)
+        gripper_frame_cam = GripperFrame.init(grasp_point_cam_3d, -grasps_orientation, -angle - np.pi / 2)
+        grasp_pose_cam = gripper_frame_cam.to_6dpose()
 
-        # 3. 将相机坐标系下的grasp转换到机器人基座标系下，能够直接被moveit接收的格式
+        # 夹爪在相机坐标系下的旋转矩阵
+        rotation_mat_cam = grasp_pose_cam[:3, :3]   # (3,3)
+        physical_grasp_width = width / self.map_size * 2 * z * np.tan(np.deg2rad(self.camera_params.fov * self.map_size / depth_img.shape[0] * 0.5))
+        physical_grasp_width *= 1.2 # 稍微放款一点
+        # 最终实施抓取的夹爪张开宽度
+        physical_grasp_width = np.clip(physical_grasp_width, 0.0, 0.14) # 限制在最大抓取宽度内，单位m
+
+        # 往前前进1cm，得到最终夹爪末端TCP应该到达的位置
+        tcp_position_cam = grasp_point_cam_3d + rotation_mat_cam[:, -1] * 0.01
+
+        return tcp_position_cam, rotation_mat_cam
+        

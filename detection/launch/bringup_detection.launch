@@ -1,0 +1,41 @@
+<launch>
+
+    <!-- 负责进行检测的节点 -->
+    <node pkg="detection" type="node_detection.py" name="node_detection" output="screen" required="true" ns="ryan" >
+        <!-- 节点私有参数 -->
+        <!-- 相机内参 -->
+        <param name="model_path" value="/home/ryan/Codes/pythonProject/grasping-repo/paper_grasp_project/light_detection/state_dicts/model.pth"/>
+        
+        <param name="intrinsics/fx" type="double" value="388.879" />
+        <param name="intrinsics/fy" type="double" value="388.879" />
+        <param name="intrinsics/cx" type="double" value="325.910" />
+        <param name="intrinsics/cy" type="double" value="238.140" />
+        <!-- fov的值待确认 -->
+        <param name="intrinsics/fov" type="double" value="68" />
+
+        <!-- 相机外参 -->
+        <!-- TODO 未确定，后续需要标定得到 -->
+        <param name="extrinsics/x"  type="double" value="1.65911" />
+        <param name="extrinsics/y"  type="double" value="-0.599307" />
+        <param name="extrinsics/z"  type="double" value="0.340049" />
+        <param name="extrinsics/rx" type="double" value="236.42" />
+        <param name="extrinsics/ry" type="double" value="0.81914" />
+        <param name="extrinsics/rz" type="double" value="22.6975" />
+    </node>
+
+    <!-- realsense相机节点 -->
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch" >
+        <arg name="device_type" value="d435"/>
+        <arg name="align_depth" value="true"/>
+
+        <arg name="depth_width" value="640"/>
+        <arg name="depth_height" value="480"/>
+        
+        <arg name="color_width" value="640"/>
+        <arg name="color_height" value="480"/>
+        
+        <arg name="enable_pointcloud" value="true"/>
+        
+    </include>
+
+</launch>

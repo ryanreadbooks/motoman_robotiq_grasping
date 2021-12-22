@@ -1,0 +1,6 @@
+[submodule "geometry"]
+	path = geometry
+	url = https://github.com/ros/geometry.git
+[submodule "geometry2"]
+	path = geometry2
+	url = https://github.com/ros/geometry2.git

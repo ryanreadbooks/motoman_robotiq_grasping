@@ -1,3 +1,4 @@
+# coding=utf-8
 """
 written by ryanreadbooks
 date: 2021/11/25

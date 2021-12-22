@@ -1,3 +1,4 @@
+# coding=utf-8
 import math
 import torch
 import torch.nn.functional as F
@@ -5,7 +6,7 @@ from torch import nn
 import torchvision.models.resnet as resnet
 from torchvision import models
 from itertools import chain
-from key_constants_pool import *
+from .key_constants_pool import *
 
 
 class _PSPModule(nn.Module):

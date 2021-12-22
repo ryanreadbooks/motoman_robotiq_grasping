@@ -2,14 +2,16 @@
 written by ryanreadbooks
 date: 2021/11/27
 """
+# coding=utf-8
 from typing import Dict
 import torch
 from skimage.filters import gaussian
 from skimage.feature import peak_local_max
 import numpy as np
+import copy
 
-from key_constants_pool import *
-from grasp_repr import GraspInLine
+from .key_constants_pool import *
+from .grasp_repr import GraspInLine
 
 
 def pack_single_image(img: np.ndarray = None, depth: np.ndarray = None, out_size=384, device=torch.device('cuda')):
@@ -90,13 +92,6 @@ def decode_graspmap(graspness, angle, width, original_img, angles_table, n_grasp
     """
     assert mode in ('global', 'local'), "mode should be either 'global' or 'local', {:s} not supported.".format(mode)
     h, w = graspness.shape
-    # len_interval = np.pi / n_cls
-    # angles_table = {0: 0.0}  # 存储每个类别对应的角度
-    # for i in range(n_cls):
-    #     start_angle = i * len_interval
-    #     end_angle = (i + 1) * len_interval
-    #     mid = (start_angle + end_angle) / 2
-    #     angles_table[i + 1] = mid
 
     if mode == 'global':
         # 所有超过阈值的点都要
@@ -109,11 +104,11 @@ def decode_graspmap(graspness, angle, width, original_img, angles_table, n_grasp
     else:
         # 多个物体的时候，局部最大值的都取
         pred_pts = peak_local_max(image=graspness, min_distance=2, threshold_abs=threshold, num_peaks=n_grasp)
-
+    original_img_for_drawing = copy.deepcopy(original_img)
     for (r, c) in pred_pts:
         angle_value = angles_table[angle[r, c]]  # rad
         width_value = width[r, c] * 200  # pixel
         grasp = GraspInLine(x=c, y=r, width=width_value, angle=angle_value, shape=(h, w), corners=None)
-        original_img = grasp.draw_on_img(original_img)
+        original_img_for_drawing = grasp.draw_on_img(original_img_for_drawing)
 
-    return original_img, pred_pts
+    return original_img_for_drawing, pred_pts
