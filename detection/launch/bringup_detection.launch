@@ -12,15 +12,6 @@
         <param name="intrinsics/cy" type="double" value="238.140" />
         <!-- fov的值待确认 -->
         <param name="intrinsics/fov" type="double" value="68" />
-
-        <!-- 相机外参 -->
-        <!-- TODO 未确定，后续需要标定得到 ，是在这里配置还是使用tf2进行外参的发布-->
-        <param name="extrinsics/x"  type="double" value="1.65911" />
-        <param name="extrinsics/y"  type="double" value="-0.599307" />
-        <param name="extrinsics/z"  type="double" value="0.340049" />
-        <param name="extrinsics/rx" type="double" value="236.42" />
-        <param name="extrinsics/ry" type="double" value="0.81914" />
-        <param name="extrinsics/rz" type="double" value="22.6975" />
     </node>
 
     <!-- realsense相机节点 -->
@@ -35,7 +26,10 @@
         <arg name="color_height" value="480"/>
         
         <arg name="enable_pointcloud" value="true"/>
-        
     </include>
+
+    <!-- TF发布：发布相机的外参：这里用的是眼在手上，所以发布相机和机械臂工具末端静态的变换关系 -->
+    <!-- TODO 外参标定完成后填入正确的外参关系 -->
+    <node name="camera_extrinsic_publisher" pkg="tf" type="static_transform_publisher"  output="screen" respawn="true" args="0.15 0.05 0.05 0 0 0 1 grasping_frame camera_link 50" />        
 
 </launch>

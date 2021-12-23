@@ -162,13 +162,14 @@ class PlanarGraspDetector:
         distances, indices = tree.query(grasp_point_cam_3d, k=1, workers=4)
         cloud_normals = np.asarray(cloud.normals)
         grasps_orientation = cloud_normals[indices]    # (3,)
+        print(f'grasps_orientation = {grasps_orientation}')
         gripper_frame_cam = GripperFrame.init(grasp_point_cam_3d, -grasps_orientation, -angle - np.pi / 2)
         grasp_pose_cam = gripper_frame_cam.to_6dpose()
 
         # 夹爪在相机坐标系下的旋转矩阵
         rotation_mat_cam = grasp_pose_cam[:3, :3]   # (3,3)
         physical_grasp_width = width / self.map_size * 2 * z * np.tan(np.deg2rad(self.camera_params.fov * self.map_size / depth_img.shape[0] * 0.5))
-        physical_grasp_width *= 1.2 # 稍微放款一点
+        physical_grasp_width *= 1.2 # 稍微放宽一点
         # 最终实施抓取的夹爪张开宽度
         physical_grasp_width = np.clip(physical_grasp_width, 0.0, 0.14) # 限制在最大抓取宽度内，单位m
 

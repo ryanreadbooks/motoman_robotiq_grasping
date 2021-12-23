@@ -1,0 +1,20 @@
+# robotiq夹爪的动作服务
+# 请求：
+#   reqcode: 请求码
+#   position: 夹爪张开的宽度，单位m
+#   speed: 夹爪速度
+#   force: 夹爪施加的力
+#   comment: 备用
+# 响应：
+#   reqcode: 收到的请求码
+#   rescode: 响应码
+#   comment: 备用
+int32 reqcode
+float32 position
+float32 speed
+float32 force
+string comment
+---
+int32 reqcode
+int32 rescode
+string data

@@ -1,0 +1,36 @@
+<!-- Launch file for Segway platform startup -->
+<launch>
+    <!-- robotiq connection config -->
+    <arg name="sim" default="false"/>
+    <arg name="comport" default="/dev/ttyUSB0" unless="$(arg sim)"/> 
+    <arg name="baud" default="115200" unless="$(arg sim)"/> 
+
+    <!-- Launch action server for gripper, 注意命名空间的一致 -->
+    <include file="$(find robotiq_2f_gripper_control)/launch/robotiq_action_server.launch" ns='ryan'>
+        <arg name="comport" value="$(arg comport)" unless="$(arg sim)"/>
+        <arg name="baud" value="$(arg baud)" unless="$(arg sim)"/>
+        <arg name="stroke" value="0.140"/>
+        <arg name="joint_name" value="finger_joint"/>
+        <arg name="verbose" value="true"/>
+        <arg name="sim" value="$(arg sim)"/>
+    </include>
+
+    <!-- put into rosparam server -->
+    <param name="robot_description" command="$(find xacro)/xacro $(find robotiq_2f_140_gripper_visualization)/urdf/robotiq_arg2f_140_model.xacro" />  
+
+    <node name="gripper_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" >
+        <param name="robot_description" value="robot_description"/>
+        <param name="publish_frequency" type="double" value="100.0" />
+    </node>
+
+    <node name="gripper_joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+        <rosparam param="source_list">[/joint_states]</rosparam>
+        <rosparam param="use_gui">false</rosparam>
+    </node>
+
+    <!-- launch the gripper server 注意命名空间的一致 -->
+    <node name="gripper_server" pkg="gripper_server" type="node_gripper_server.py"  output="screen" required="true" ns='ryan'>
+        <param name="action_name" value="command_robotiq_action" />
+    </node>
+
+</launch>

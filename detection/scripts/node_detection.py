@@ -3,7 +3,7 @@
 
 
 """
-检测节点：负责进行抓取检测，与realsense相机直接打交道
+检测节点 - 负责进行抓取检测，与realsense相机直接打交道
 """
 
 from collections import deque
@@ -23,9 +23,6 @@ from inference import PlanarGraspDetector, CameraParams
 
 # 全局常量定义
 NODE_DETECTION_NAME = 'node_detection'
-
-# MODEL_PATH = '/home/ryan/Codes/pythonProject/grasping-repo/paper_grasp_project/light_detection/state_dicts/model.pth'
-
 
 
 _cv_bridge: CvBridge = CvBridge()
@@ -79,8 +76,10 @@ def infer():
                 # 检测成功
                 _, tcp_cam, rot_mat_cam, img_with_grasps = res
                 # 发布TF
+                # TODO pose好像不太对
                 stamped_transform = gmsg.TransformStamped()
                 stamped_transform.header.stamp = rospy.Time.now()
+                # 发布相机坐标系下的抓取姿态坐标
                 stamped_transform.header.frame_id = 'camera_link'
                 stamped_transform.child_frame_id = 'grasp_candidate'
                 stamped_transform.transform.translation.x = tcp_cam[0]
@@ -88,6 +87,7 @@ def infer():
                 stamped_transform.transform.translation.z = tcp_cam[2]
                 # 旋转矩阵转化为四元数
                 qw, qx, qy, qz = pr.quaternion_from_matrix(rot_mat_cam)
+                rospy.loginfo('qw={:.5f}, qx={:.5f}, qy={:.5f}, qz={:.5f}'.format(qw, qx, qy, qz))
                 stamped_transform.transform.rotation.x = qx
                 stamped_transform.transform.rotation.y = qy
                 stamped_transform.transform.rotation.z = qz

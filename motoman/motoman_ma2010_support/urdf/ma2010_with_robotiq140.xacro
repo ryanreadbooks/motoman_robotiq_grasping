@@ -21,7 +21,7 @@
   <joint name="grasping_frame_joint" type="fixed">
     <parent link="tool0"/>
 	<child link="grasping_frame"/>
-	<origin xyz=" 0.23 0.0 0.0" rpy="0.0 0.0 0.0" />
+	<origin xyz="0.260522 0.0 0.0" rpy="-0.006 0.008 -0.032" />
   </joint>	  
 
 </robot>
