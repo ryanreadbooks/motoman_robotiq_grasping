@@ -8,10 +8,10 @@
     robot_interface_streaming_ma2010.launch robot_ip:=<value> controller:=<yrc1000>
 -->
 <launch>
-  <arg name="robot_ip" />
+  <arg name="robot_ip" default="192.168.255.1"/>
 
   <!-- controller: Controller name (yrc1000) -->
-  <arg name="controller"/>
+  <arg name="controller" default="dx200"/>
 
   <rosparam command="load" file="$(find motoman_ma2010_support)/config/joint_names_ma2010.yaml" />
 

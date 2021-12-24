@@ -15,17 +15,20 @@
         <arg name="sim" value="$(arg sim)"/>
     </include>
 
-    <!-- put into rosparam server -->
-    <param name="robot_description" command="$(find xacro)/xacro $(find robotiq_2f_140_gripper_visualization)/urdf/robotiq_arg2f_140_model.xacro" />  
+    <!-- put the gripper model urdf into rosparam server -->
+    <param name="gripper_robot_description" command="$(find xacro)/xacro $(find robotiq_2f_140_gripper_visualization)/urdf/robotiq_arg2f_140_model.xacro" />  
 
-    <node name="gripper_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" >
-        <param name="robot_description" value="robot_description"/>
+    <!-- motoman中也需要robot_description，所以用remap指向了gripper_robot_description -->
+    <!-- 下面的gripper_joint_state_publisher也需要robot_description，同样的道理 -->
+    <node name="gripper_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" >
+        <remap from="robot_description" to="gripper_robot_description"/>
         <param name="publish_frequency" type="double" value="100.0" />
     </node>
 
-    <node name="gripper_joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <node name="gripper_joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" respawn="true">
         <rosparam param="source_list">[/joint_states]</rosparam>
         <rosparam param="use_gui">false</rosparam>
+        <remap from="robot_description" to="gripper_robot_description"/>
     </node>
 
     <!-- launch the gripper server 注意命名空间的一致 -->

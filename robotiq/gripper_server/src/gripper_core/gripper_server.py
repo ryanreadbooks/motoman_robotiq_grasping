@@ -51,7 +51,7 @@ class GripperServer:
         初始化
         """
         # 包含一个夹爪控制对象
-        self._robotiq_client = robotiq_client
+        self._robotiq_client: actionlib.SimpleActionClient = robotiq_client
 
     def handle_request(self, request: GripperServiceRequest):
         """
@@ -102,7 +102,7 @@ class GripperServer:
         rospy.loginfo(f'Manual set gripper at position = {position}, speed = {speed}, force = {force}')
         # 阻塞等待夹爪操作结束
         Robotiq.goto(self._robotiq_client, pos=position, speed=speed, force=force, block=True)
-        rospy.sleep(0.5)
+        rospy.sleep(0.1)
 
         return self.get_action_state()
 
@@ -112,7 +112,7 @@ class GripperServer:
         """
         rospy.logwarn(f'Emergency release triggered')
         Robotiq.emergency_release(self._robotiq_client)
-        rospy.sleep(0.5)
+        rospy.sleep(0.1)
         
         return self.get_action_state()
 
@@ -122,7 +122,7 @@ class GripperServer:
         """
         rospy.loginfo(f'Stopping the gripper')
         Robotiq.stop(self._robotiq_client, block=True)
-        rospy.sleep(0.5)
+        rospy.sleep(0.1)
 
         return self.get_action_state()
 
@@ -132,7 +132,7 @@ class GripperServer:
         """
         rospy.loginfo(f'Opening the gripper using speed = {speed}, force = {force}')
         Robotiq.open(self._robotiq_client, speed, force)
-        rospy.sleep(0.5)
+        rospy.sleep(0.1)
 
         return self.get_action_state()
 
@@ -142,10 +142,13 @@ class GripperServer:
         """
         rospy.loginfo(f'Closing the gripper using speed = {speed}, force = {force}')
         Robotiq.close(self._robotiq_client, speed, force)
-        rospy.sleep(0.5)
+        rospy.sleep(0.1)
 
         return self.get_action_state()
 
     def debug(self):
         rospy.loginfo('DEBUGGING : gripper server running')
         return self.OK, 'Debug information'
+
+    def shutdown_service(self):
+        self._robotiq_client.cancel_all_goals()

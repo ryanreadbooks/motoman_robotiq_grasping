@@ -26,8 +26,15 @@ def request_handler(req: GripperServiceRequest):
     return response
 
 
+def on_server_shutdown():
+    rospy.loginfo('Gripper server now shutting down...')
+    gripper_server.shutdown_service()
+    rospy.loginfo('Gripper server has been shut down')
+
+
 if __name__ == '__main__':
     rospy.init_node('node_gripper_server')
+    rospy.on_shutdown(on_server_shutdown)
     rospy.loginfo('Connecting to robotiq gripper')
 
     action_name = rospy.get_param('~action_name', 'command_robotiq_action')

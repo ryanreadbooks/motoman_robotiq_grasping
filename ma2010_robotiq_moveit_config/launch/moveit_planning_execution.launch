@@ -1,0 +1,31 @@
+<launch>
+  <!-- 加载关节角名称 -->
+  <rosparam command="load" file="$(find motoman_ma2010_moveit_config)/config/joint_names.yaml"/>
+
+  <!-- the "sim" argument controls whether we connect to a Simulated or Real robot -->
+  <!--  - if sim=false, a robot_ip argument is required -->
+  <arg name="robot_ip" default="192.168.255.1" />
+
+  <!-- load the robot_description parameter before launching ROS-I nodes -->
+  <include file="$(find ma2010_robotiq_moveit_config)/launch/planning_context.launch" >
+    <arg name="load_robot_description" value="true" />
+  </include>
+
+  <!-- DX200 -->
+  <include file="$(find motoman_ma2010_support)/launch/robot_interface_streaming_ma2010.launch" >
+    <arg name="robot_ip" value="$(arg robot_ip)"/>
+    <arg name="controller" value="dx200" />
+  </include>
+
+  <include file="$(find ma2010_robotiq_moveit_config)/launch/move_group.launch">
+    <arg name="publish_monitored_planning_scene" value="true" />
+  </include>
+
+  <!-- publish the robot state (tf transforms) -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+
+  <include file="$(find ma2010_robotiq_moveit_config)/launch/moveit_rviz.launch">
+    <arg name="config" value="true"/>
+  </include>
+
+</launch>

@@ -8,7 +8,7 @@
 # 响应：
 #   reqcode: 收到的请求码
 #   rescode: 响应码
-#   comment: 备用
+#   comment: 响应数据，通过json格式传递
 int32 reqcode
 float32 position
 float32 speed
