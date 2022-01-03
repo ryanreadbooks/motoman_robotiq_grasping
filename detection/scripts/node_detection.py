@@ -64,9 +64,9 @@ def infer():
         rgb_img = _cv_bridge.imgmsg_to_cv2(_rgb_queue.popleft())
         depth_img = _cv_bridge.imgmsg_to_cv2(_depth_queue.popleft())
         try :
-            # realsense的深度需要处理成以m为单位
+            # realsense的深度需要处理成以m为单位，在grasp_detector.detect函数内部会进行处理
             start_time = time.time()
-            res = grasp_detector.detect(rgb_img, depth_img / 1000.0)
+            res = grasp_detector.detect(rgb_img, depth_img)
             end_time = time.time()
             rospy.loginfo('get detection res from grasp detector, and took time %f seconds' % (end_time - start_time))
             if not res[0]:
@@ -79,8 +79,8 @@ def infer():
                 # TODO pose好像不太对
                 stamped_transform = gmsg.TransformStamped()
                 stamped_transform.header.stamp = rospy.Time.now()
-                # 发布相机坐标系下的抓取姿态坐标
-                stamped_transform.header.frame_id = 'camera_link'
+                # 发布相机坐标系下的抓取姿态坐标，这里如果用camera_link的话，不work
+                stamped_transform.header.frame_id = 'camera_depth_optical_frame'
                 stamped_transform.child_frame_id = 'grasp_candidate'
                 stamped_transform.transform.translation.x = tcp_cam[0]
                 stamped_transform.transform.translation.y = tcp_cam[1]
@@ -94,7 +94,7 @@ def infer():
                 stamped_transform.transform.rotation.w = qw
 
                 transform_br.sendTransform(stamped_transform)
-
+                # 将检测的结果图片发布出去
                 result_img_publisher.publish(_cv_bridge.cv2_to_imgmsg(img_with_grasps[:,:,::-1]))   # 格式转换
                 rospy.loginfo('Grasp detection succeed.')
         except Exception as e:

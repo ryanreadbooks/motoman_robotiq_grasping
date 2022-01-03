@@ -98,3 +98,33 @@ def raw_generate_pc(rgb, depth, cam_intrin, depth_scale=1.0, depth_trunc=1.5):
     )
 
     return cloud
+
+
+def angle_to_rot_mat(rx, ry, rz, rot_type='abg'):
+    """
+    绕三个轴的旋转角度化成一个旋转矩阵
+    :param rx: 绕x轴的旋转量，单位(rad)
+    :param ry: 绕y轴的旋转量，单位(rad)
+    :param rz: 绕z轴的旋转量，单位(rad)
+    :param rot_type: 设置三个旋转角度化成旋转矩阵的形式，可选'abg'和'gba'。其中abg的三次旋转都是绕定轴的；gba的三次旋转是绕动轴的。
+    :return:
+    """
+
+    rotation_x = np.array([[1, 0, 0],
+                           [0, np.cos(rx), -np.sin(rx)],
+                           [0, np.sin(rx), np.cos(rx)]])
+
+    rotation_y = np.array([[np.cos(ry), 0, np.sin(ry)],
+                           [0, 1, 0],
+                           [-np.sin(ry), 0, np.cos(ry)]])
+
+    rotation_z = np.array([[np.cos(rz), -np.sin(rz), 0],
+                           [np.sin(rz), np.cos(rz), 0],
+                           [0, 0, 1]])
+
+    if rot_type == 'abg':
+        rot = (rotation_z @ rotation_y) @ rotation_x  # 'abg'
+    else:
+        rot = (rotation_x @ rotation_y) @ rotation_z  # 'gba'
+
+    return rot

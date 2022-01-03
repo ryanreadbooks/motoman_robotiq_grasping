@@ -140,14 +140,17 @@ class PlanarGraspDetector:
         left = 320 - self.map_size // 2 # (640 // 2 - self.map_size // 2)
         top = 240 - self.map_size // 2 # (480 // 2 - self.map_size // 2)
         y_raw, x_raw = top + y, left + x
-        # 得到深度
-        z = depth_img[y_raw, x_raw]
+        # 得到深度，单位化为m
+        z = depth_img[y_raw, x_raw] / 1000.0
         # 抓取点转到相机坐标系下
         x = (x_raw - self.camera_params.cx) * z / self.camera_params.fx
         y = (y_raw - self.camera_params.cy) * z / self.camera_params.fy
         grasp_point_cam_3d = np.array([x, y, z])
         # 末端姿态
-        cloud = raw_generate_pc(rgb=rgb_img, depth=depth_img, cam_intrin=self.camera_params.to_matrix())
+        # 这里depth_scale给1,因为外面已经scale过了depth了
+        cloud = raw_generate_pc(rgb=rgb_img, depth=depth_img, depth_scale=1000.0, cam_intrin=self.camera_params.to_matrix())
+        if cloud.is_empty():
+            raise RuntimeError('the input point cloud is empty, rgb shape={:s}, depth shape={:s}'.format(str(rgb_img.shape), str(depth_img.shape)))
         cloud.estimate_normals(
             search_param=o3d.geometry.KDTreeSearchParamHybrid(
                 radius=0.005,

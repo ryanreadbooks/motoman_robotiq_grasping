@@ -6,10 +6,10 @@
         <!-- 相机内参 -->
         <param name="model_path" value="/home/ryan/Codes/pythonProject/grasping-repo/paper_grasp_project/light_detection/state_dicts/model.pth"/>
         
-        <param name="intrinsics/fx" type="double" value="388.879" />
-        <param name="intrinsics/fy" type="double" value="388.879" />
-        <param name="intrinsics/cx" type="double" value="325.910" />
-        <param name="intrinsics/cy" type="double" value="238.140" />
+        <param name="intrinsics/fx" type="double" value="384.142" />
+        <param name="intrinsics/fy" type="double" value="384.142" />
+        <param name="intrinsics/cx" type="double" value="320.724" />
+        <param name="intrinsics/cy" type="double" value="237.23" />
         <!-- fov的值待确认 -->
         <param name="intrinsics/fov" type="double" value="68" />
     </node>
@@ -28,8 +28,15 @@
         <arg name="enable_pointcloud" value="true"/>
     </include>
 
+    <!-- 眼在手上的外参标定结果 -->
+    <arg name="rx" value="358.786"/>
+    <arg name="ry" value="1.44065"/>
+    <arg name="rz" value="88.787"/>
+
     <!-- TF发布：发布相机的外参：这里用的是眼在手上，所以发布相机和机械臂工具末端静态的变换关系 -->
-    <!-- TODO 外参标定完成后填入正确的外参关系 -->
-    <node name="camera_extrinsic_publisher" pkg="tf" type="static_transform_publisher"  output="screen" respawn="true" args="0.15 0.05 0.05 0 0 0 1 grasping_frame camera_link 50" />        
+    <!-- <node name="camera_extrinsic_publisher" pkg="tf" type="static_transform_publisher"  output="screen" respawn="true" args="0.127258 -0.0346583 -0.24792 -0.01636378 0.00157188 0.69958291 0.71436231 grasping_frame camera_link 20" /> -->
+    <!-- <node name="camera_extrinsic_publisher" pkg="tf" type="static_transform_publisher"  output="screen" respawn="true" args="-0.24792 -0.0346583 0.127258 -0.01636378 0.00157188 0.69958291 0.71436231 grasping_frame camera_link 20" /> -->
+    <!-- 旋转角度参数为：yaw pitch roll -->
+    <node name="camera_extrinsic_publisher" pkg="tf" type="static_transform_publisher"  output="screen" respawn="true" args="-0.24792 -0.0346583 0.127258 ${rz/57.29} ${ry/57.29} ${rx/57.29} grasping_frame camera_link 20" />
 
 </launch>

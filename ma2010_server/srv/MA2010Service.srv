@@ -1,0 +1,11 @@
+# ma2010_server对外提供的服务类型定义
+# 请求：
+# 
+# 响应：
+
+int32 reqcode
+geometry_msgs/PoseStamped target
+string data
+---
+int32 rescode
+string data
