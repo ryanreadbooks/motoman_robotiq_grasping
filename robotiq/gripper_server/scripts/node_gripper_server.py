@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
     gripper_server = GripperServer(_robotiq_client)
     rospy.loginfo('Connected to robotiq gripper.')
-    ros_server = rospy.Service('node_gripper_server', GripperService, request_handler)
+    ros_server = rospy.Service('node_gripper_service', GripperService, request_handler)
     rospy.loginfo('Gripper server on and is ready to receive requests...')
 
     rospy.spin()

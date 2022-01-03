@@ -1,5 +1,5 @@
 # 安川MA2010机械臂 + Robotiq 2F-140夹爪视觉抓取 (持续更新...)
-功能：在ROS平台上，使用realsense相机引导安川MA2010机械臂用Robotiq 2F-140夹爪进行抓取
+**功能：在ROS平台上，使用realsense相机引导安川MA2010机械臂用Robotiq 2F-140夹爪进行抓取**
 
 [toc]
 
@@ -92,10 +92,10 @@ roslaunch ma2010_robotiq_moveit_config moveit_planning_execution.launch robot_ip
    roslaunch gripper_server bringup_gripper_server.launch
    ```
 
-2. 通过`rosservice call` 命令调用服务`/ryan/node_gripper_server`，指定请求码等参数
+2. 通过`rosservice call` 命令调用服务`/ryan/node_gripper_service`，指定请求码等参数
 
    ```bash
-   rosservice call /ryan/node_gripper_server "{reqcode: 200, position: 0.10, speed: 0.5, force: 1.0, comment: ''}"
+   rosservice call /ryan/node_gripper_service "{reqcode: 200, position: 0.10, speed: 0.5, force: 1.0, comment: ''}"
    ```
 
 **reqcode说明**：
