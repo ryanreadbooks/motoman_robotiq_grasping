@@ -152,7 +152,12 @@ void Ma2010ServerCore::get_current_joints(Ma2010Response& response, json& res_js
     response.curstate = p_arm_->getCurrentPose();
     // 六个关节角
     vector<double> joints = p_arm_->getCurrentJointValues();
-    res_json[StrResCode] = ResOK;
     res_json[StrJoints] = joints;
-    res_json[StrComments] = "success";
+    if (joints.size() != 0) {
+        res_json[StrResCode] = ResOK;
+        res_json[StrComments] = "success";
+    } else {
+        res_json[StrResCode] = ResFail;
+        res_json[StrComments] = "failed to retrieve robot joints";
+    }
 }

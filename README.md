@@ -3,17 +3,17 @@
 
 **目录**
 
-[安川MA2010机械臂 + Robotiq 2F-140夹爪视觉抓取 (持续更新...)](#安川MA2010机械臂-+-Robotiq-2F-140夹爪视觉抓取-(持续更新...))
-
-- [环境](#环境)
-- [安装](#安装)
-  - [前置条件](#前置条件)
-  - [安川机械臂驱动和夹爪驱动](#安川机械臂驱动和夹爪驱动)
-  - [安装本仓库](#安装本仓库)
-- [安川驱动测试](#安川驱动测试)
-  - [官方的功能包测试](#官方的功能包测试)
-  - [用带有robotiq夹爪的机械臂测试](#用带有robotiq夹爪的机械臂测试)
-- [Robotiq夹爪功能测试](#Robotiq夹爪功能测试)
+- [安川MA2010机械臂 + Robotiq 2F-140夹爪视觉抓取 (持续更新...)](#安川ma2010机械臂--robotiq-2f-140夹爪视觉抓取-持续更新)
+  - [环境](#环境)
+  - [安装](#安装)
+    - [前置条件](#前置条件)
+    - [安川机械臂驱动和夹爪驱动](#安川机械臂驱动和夹爪驱动)
+    - [安装本仓库](#安装本仓库)
+  - [安川驱动测试](#安川驱动测试)
+    - [官方的功能包测试](#官方的功能包测试)
+    - [用带有robotiq夹爪的机械臂测试](#用带有robotiq夹爪的机械臂测试)
+  - [Robotiq夹爪功能测试](#robotiq夹爪功能测试)
+  - [致谢](#致谢)
 
 ---
 
@@ -125,5 +125,13 @@ ReqGripperERelease          = 204       # 紧急释放夹爪
 ReqGripperDebug             = 210       # 调试功能
 ```
 
+---
 
+
+
+## 致谢
+
+* [ros-industrial/motoman](https://github.com/ros-industrial/motoman)
+* [Danfoa/robotiq_2finger_grippers](https://github.com/Danfoa/robotiq_2finger_grippers)
+* [Nomango/configor](https://github.com/Nomango/configor)
 

@@ -32,7 +32,6 @@ int main(int argc, char** argv) {
 
     NodeHandle handle;
     ServiceServer server = handle.advertiseService(MA2010_SERVICE_NAME, do_ma2010_service_request);
-    ROS_INFO("MA2010 Server is on now...");
 
     // moveit需要用到在用到MoveGroupInterface中的一些函数时，需要ros::AsyncSpinner，否则会失败
     ros::AsyncSpinner spinner(1);
@@ -45,6 +44,7 @@ int main(int argc, char** argv) {
     if (flag) {
         ROS_INFO("Robot enable => Success: %s, Message: %s", trigger.response.success == 1 ? "True" : "False", 
                 trigger.response.message.c_str());
+        ROS_INFO("MA2010 Server is on now...");
     } else {
         ROS_WARN("Robot can not be enabled. Try again !");
     }
