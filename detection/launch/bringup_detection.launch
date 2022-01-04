@@ -1,7 +1,7 @@
 <launch>
 
     <!-- 负责进行检测的节点 -->
-    <node pkg="detection" type="node_detection.py" name="node_detection" output="screen" required="true" ns="ryan" >
+    <node pkg="detection" type="node_detection.py" name="node_detection" output="screen" required="true" >
         <!-- 节点私有参数 -->
         <!-- 相机内参 -->
         <param name="model_path" value="/home/ryan/Codes/pythonProject/grasping-repo/paper_grasp_project/light_detection/state_dicts/model.pth"/>

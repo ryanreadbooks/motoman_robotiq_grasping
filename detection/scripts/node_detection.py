@@ -17,6 +17,7 @@ from cv_bridge import CvBridgeError, CvBridge
 from sensor_msgs.msg import Image
 import pytransform3d.rotations as pr
 
+from detection.msg import DetectionResult
 from inference import PlanarGraspDetector, CameraParams
 # from helper.transform_utils import *
 
@@ -32,7 +33,7 @@ _depth_queue = deque(maxlen=2)
 
 # tf广播器
 # Create broadcast node
-transform_br = tf2_ros.TransformBroadcaster()
+tf_broadcaster = tf2_ros.TransformBroadcaster()
 
 
 
@@ -60,6 +61,7 @@ def infer():
     :param: depth np.ndarray格式的depth图片，shape=(H, W)
     """
     # 从队列中取数据
+    result_msg = DetectionResult()
     if len(_rgb_queue) != 0 and len(_depth_queue) != 0:
         rgb_img = _cv_bridge.imgmsg_to_cv2(_rgb_queue.popleft())
         depth_img = _cv_bridge.imgmsg_to_cv2(_depth_queue.popleft())
@@ -71,10 +73,12 @@ def infer():
             rospy.loginfo('get detection res from grasp detector, and took time %f seconds' % (end_time - start_time))
             if not res[0]:
                 # 检测失败
+                result_msg.success = False
+                result_msg.message = 'Grasp detection failed, can not find grasps!'
                 rospy.logwarn('Grasp detection failed, can not find grasps!')
             else:
                 # 检测成功
-                _, tcp_cam, rot_mat_cam, img_with_grasps = res
+                _, tcp_cam, rot_mat_cam, img_with_grasps, physical_grasp_width = res
                 # 发布TF
                 # TODO pose好像不太对
                 stamped_transform = gmsg.TransformStamped()
@@ -93,14 +97,22 @@ def infer():
                 stamped_transform.transform.rotation.z = qz
                 stamped_transform.transform.rotation.w = qw
 
-                transform_br.sendTransform(stamped_transform)
+                tf_broadcaster.sendTransform(stamped_transform)
                 # 将检测的结果图片发布出去
                 result_img_publisher.publish(_cv_bridge.cv2_to_imgmsg(img_with_grasps[:,:,::-1]))   # 格式转换
+
+                result_msg.success = True
+                result_msg.grasp_width = physical_grasp_width
+                result_msg.transformation = stamped_transform
+                result_msg.message = 'Success'
                 rospy.loginfo('Grasp detection succeed.')
         except Exception as e:
             rospy.logerr('Grasp detection failed due to exception {:s} of type {:s}'.format(str(e), str(type(e))))
     else:
+        result_msg.success = False
+        result_msg.message = 'Can not read images from realsense camera!!'
         rospy.logwarn('Can not read images from realsense camera!!')
+    detection_res_publisher.publish(result_msg)
 
 def before_shutdown():
     """
@@ -118,7 +130,9 @@ if __name__ == '__main__':
     rospy.Subscriber('/camera/aligned_depth_to_color/image_raw', Image, subscribe_depth, queue_size=3)
 
     # 发布检测结果的图片的话题
-    result_img_publisher = rospy.Publisher('/ryan/detection/grasps_result_image', Image, queue_size=15)
+    result_img_publisher = rospy.Publisher('/detection/grasps_result_image', Image, queue_size=5)
+    # 检测结果的发布话题
+    detection_res_publisher = rospy.Publisher('/detection/result', DetectionResult, queue_size=5)
 
     # 获取相机内参
     d435i = CameraParams(cx=rospy.get_param('~intrinsics/cx'), 
@@ -129,7 +143,6 @@ if __name__ == '__main__':
 
     grasp_detector = PlanarGraspDetector(model_path=rospy.get_param('~model_path'), camera_params=d435i)
 
-    # TODO 测试用
     rate = rospy.Rate(10) # 10hz
     while not rospy.is_shutdown():
         infer()

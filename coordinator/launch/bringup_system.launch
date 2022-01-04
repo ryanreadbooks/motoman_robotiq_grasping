@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!-- 整个系统的统一入口，该launch文件将启动所有所需要的节点 -->
+<launch>
+    <!-- 检测节点 -->
+    <include file="$(find detection)/launch/bringup_detection.launch" />
+    
+    <!-- 机械臂节点 -->
+    <include file="$(find ma2010_server)/launch/bringup_ma2010_server.launch" />
+    
+    <!-- 夹爪节点 -->
+    <include file="$(find gripper_server)/launch/bringup_gripper_server.launch"/>
+    
+</launch>

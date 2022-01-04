@@ -6,7 +6,7 @@
     <arg name="baud" default="115200" unless="$(arg sim)"/> 
 
     <!-- Launch action server for gripper, 注意命名空间的一致 -->
-    <include file="$(find robotiq_2f_gripper_control)/launch/robotiq_action_server.launch" ns='ryan'>
+    <include file="$(find robotiq_2f_gripper_control)/launch/robotiq_action_server.launch" >
         <arg name="comport" value="$(arg comport)" unless="$(arg sim)"/>
         <arg name="baud" value="$(arg baud)" unless="$(arg sim)"/>
         <arg name="stroke" value="0.140"/>
@@ -32,7 +32,7 @@
     </node>
 
     <!-- launch the gripper server 注意命名空间的一致 -->
-    <node name="gripper_server" pkg="gripper_server" type="node_gripper_server.py"  output="screen" required="true" ns='ryan'>
+    <node name="node_gripper_server" pkg="gripper_server" type="node_gripper_server.py"  output="screen" required="true" >
         <param name="action_name" value="command_robotiq_action" />
     </node>
 

@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+
+    <!-- MA2010驱动包 -->
+    <include file="$(find ma2010_robotiq_moveit_config)/launch/moveit_planning_execution.launch">
+        <arg name="robot_ip" value="192.168.255.1"/>  
+    </include>
+
+    <!-- MA2010控制服务器 -->
+    <node name="node_ma2010_server" pkg="ma2010_server" type="node_ma2010_server"  output="screen" respawn="false" />
+
+</launch>

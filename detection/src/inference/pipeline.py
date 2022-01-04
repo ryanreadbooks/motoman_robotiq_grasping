@@ -113,9 +113,9 @@ class PlanarGraspDetector:
         if pred_grasp_pts.shape[0] == 0:
             # 没有检测到结果
             return (False, )
-        tcp_cam, rot_mat_cam = self.gen_grasp_pose(pred_grasp_pts, angle, width, img, depth)
+        tcp_cam, rot_mat_cam, physical_grasp_width = self.gen_grasp_pose(pred_grasp_pts, angle, width, img, depth)
 
-        return True, tcp_cam, rot_mat_cam, img_with_grasps
+        return True, tcp_cam, rot_mat_cam, img_with_grasps, physical_grasp_width
 
 
     def gen_grasp_pose(self, grasp_pts, angle_map, width_map, rgb_img, depth_img):
@@ -172,12 +172,12 @@ class PlanarGraspDetector:
         # 夹爪在相机坐标系下的旋转矩阵
         rotation_mat_cam = grasp_pose_cam[:3, :3]   # (3,3)
         physical_grasp_width = width / self.map_size * 2 * z * np.tan(np.deg2rad(self.camera_params.fov * self.map_size / depth_img.shape[0] * 0.5))
-        physical_grasp_width *= 1.2 # 稍微放宽一点
+        physical_grasp_width *= 1.1 # 稍微放宽一点
         # 最终实施抓取的夹爪张开宽度
         physical_grasp_width = np.clip(physical_grasp_width, 0.0, 0.14) # 限制在最大抓取宽度内，单位m
 
         # 往前前进1cm，得到最终夹爪末端TCP应该到达的位置
         tcp_position_cam = grasp_point_cam_3d + rotation_mat_cam[:, -1] * 0.01
 
-        return tcp_position_cam, rotation_mat_cam
+        return tcp_position_cam, rotation_mat_cam, physical_grasp_width
         
