@@ -10,7 +10,7 @@
 #  data: 响应数据
 
 int32 reqcode
-geometry_msgs/PoseStamped target
+geometry_msgs/Pose target
 string data
 ---
 int32 reqcode

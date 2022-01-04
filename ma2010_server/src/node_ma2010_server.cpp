@@ -1,8 +1,9 @@
 #include <ros/ros.h>
 #include <moveit/move_group_interface/move_group_interface.h>
-#include <string>
 #include <std_msgs/String.h>
+#include <std_srvs/Trigger.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <string>
 #include <sstream>
 #include <iostream>
 
@@ -12,43 +13,19 @@
 
 using std::stringstream;
 using namespace ros;
-using geometry_msgs::PoseStamped;
 using std::cout;
 using std::endl;
 using std::string;
 
-using Ma2010Request = ma2010_server::MA2010ServiceRequest;
-using Ma2010Response = ma2010_server::MA2010ServiceResponse;
-
 const static string NODE_MA2010_NAME = "node_ma2010_server";
-const static string ARM_GROUP = "manipulator";
 const static string MA2010_SERVICE_NAME = "node_ma2010_service";
 
 Ma2010ServerCore arm_server;
 
 bool do_ma2010_service_request(Ma2010Request& request, Ma2010Response& response) {
-    int reqcode = request.reqcode;
-    arm_server.init();
-    auto arm = arm_server.getArm();
-    if (reqcode == ReqGetCurPose)
-    {
-        PoseStamped cur_pose = arm->getCurrentPose();
-        response.curstate = cur_pose;
-        response.rescode = ResOK;
-    }
-    for (const auto& name : arm->getJointNames()) {
-        cout << name << " ";
-    }
-    cout << endl;
-    for (const double& v : arm->getCurrentJointValues()) {
-        cout << v << " ";
-    }
-    cout << endl;
-    // 组织响应结果
-    response.reqcode = reqcode;
-
-    return true;
+    return arm_server.do_request(request, response);
 };
+
 
 int main(int argc, char** argv) {
     ros::init(argc, argv, NODE_MA2010_NAME);
@@ -60,6 +37,17 @@ int main(int argc, char** argv) {
     // moveit需要用到在用到MoveGroupInterface中的一些函数时，需要ros::AsyncSpinner，否则会失败
     ros::AsyncSpinner spinner(1);
     spinner.start();
+
+    // 开机械臂使能
+    ros::ServiceClient client = handle.serviceClient<std_srvs::Trigger>("robot_enable");
+    std_srvs::Trigger trigger;
+    bool flag = client.call(trigger);
+    if (flag) {
+        ROS_INFO("Robot enable => Success: %s, Message: %s", trigger.response.success == 1 ? "True" : "False", 
+                trigger.response.message.c_str());
+    } else {
+        ROS_WARN("Robot can not be enabled. Try again !");
+    }
 
     while (ros::ok()) {
         ros::spinOnce();

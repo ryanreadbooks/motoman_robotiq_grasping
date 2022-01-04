@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp
     rospy
     std_msgs
+    std_srvs
     interactive_markers
     moveit_core
     moveit_ros_planning
@@ -101,6 +102,7 @@ catkin_package(
     roscpp 
     rospy 
     std_msgs
+    std_srvs
   DEPENDS
     EIGEN3
 )
