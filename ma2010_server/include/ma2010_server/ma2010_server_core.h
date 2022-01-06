@@ -58,17 +58,21 @@ public:
     bool do_request(Ma2010Request& request, Ma2010Response& response);
 
 private:
-    void move(Ma2010Response&, json&);
-    void go_home(Ma2010Response&, json&);
-    void go_dest(Ma2010Response&, json&);
-    void go_detection_origin(Ma2010Response&, json&);
-    void go_custom(const Pose &target, Ma2010Response &, json &);
-    void get_current_pose(Ma2010Response&, json&) const;
-    void get_current_joints(Ma2010Response&, json&) const;
+    void set_target_pose(const Pose &pose, const string &message);
+    void plan_motion(const string &message);
+    void move(const Ma2010Request &, Ma2010Response &, json &);
+    void go_home(const Ma2010Request&, Ma2010Response&, json&);
+    void go_dest(const Ma2010Request&, Ma2010Response&, json&);
+    void go_up(const Ma2010Request&, Ma2010Response&, json &);
+    void go_down(const Ma2010Request&, Ma2010Response&, json &);
+    void go_detection_origin(const Ma2010Request&, Ma2010Response &, json &);
+    void go_custom(const Ma2010Request&, Ma2010Response &, json &);
+    void get_current_pose(const Ma2010Request&, Ma2010Response&, json&) const;
+    void get_current_joints(const Ma2010Request&, Ma2010Response&, json&) const;
 
 private:
     Ptr p_arm_;
     PlanPtr p_plan_;
     // 请求码和请求处理函数的映射
-    map<int, function<void(Ma2010Response&, json&)>> request_mapping_;
+    map<int, function<void(const Ma2010Request&, Ma2010Response&, json&)>> request_mapping_;
 };
