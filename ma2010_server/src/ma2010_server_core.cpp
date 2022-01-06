@@ -1,8 +1,16 @@
-#include <sstream>
-#include <exception>
 #include "ma2010_server/ma2010_server_core.h"
 
-using std::stringstream;
+
+Ma2010ServerCore::Ma2010ServerCore() {
+    // 初始化request_mapping_
+    request_mapping_ = {
+        {ReqGoHome, bind(&Ma2010ServerCore::go_home, this, std::placeholders::_1, std::placeholders::_2)},
+        {ReqGoDest, bind(&Ma2010ServerCore::go_dest, this, std::placeholders::_1, std::placeholders::_2)},
+        {ReqGoDetectionOrigin, bind(&Ma2010ServerCore::go_detection_origin, this, std::placeholders::_1, std::placeholders::_2)},
+        {ReqGetCurPose, bind(&Ma2010ServerCore::get_current_pose, this, std::placeholders::_1, std::placeholders::_2)},
+        {ReqGetCurJoints, bind(&Ma2010ServerCore::get_current_joints, this, std::placeholders::_1, std::placeholders::_2)},
+    };
+}
 
 void Ma2010ServerCore::init() {
     if (!p_arm_) {
@@ -30,21 +38,14 @@ bool Ma2010ServerCore::do_request(Ma2010Request& request, Ma2010Response& respon
             init();
         }
         // 按照请求码处理请求
-        if (reqcode == ReqGoHome) {
-            go_home(response, res_json);
-        } else if (reqcode == ReqGoDest) {
-            go_dest(response, res_json);
-        } else if (reqcode == ReqGoDetectionOrigin) {
-            go_detection_origin(response, res_json);
-        } else if (reqcode == ReqGoCustom) {
+        if (reqcode == ReqGoCustom) {
             go_custom(request.target, response, res_json);
-        } else if (reqcode == ReqGetCurPose) {
-            get_current_pose(response, res_json);
-        } else if (reqcode == ReqGetCurJoints) {
-            get_current_joints(response, res_json);
         } else {
-            // 不支持的请求码
-            throw std::invalid_argument("Not supported request code!");
+            if (!request_mapping_.count(reqcode)) {
+                // 不支持的请求码
+                throw std::invalid_argument("Not supported request code!");
+            }
+            request_mapping_[reqcode](response, res_json);
         }
         response.rescode = ResOK;
     }

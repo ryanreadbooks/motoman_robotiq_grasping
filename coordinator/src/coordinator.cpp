@@ -119,12 +119,12 @@ bool Coordinator::go_to_target_position(const geometry_msgs::TransformStamped& t
     ROS_INFO("Going to grasp target position");
     // 夹爪先闭合到一定的宽度
     GripperService grip_servant;
-    grip_servant.request.reqcode = 200;
+    grip_servant.request.reqcode = ReqGripperManualAction;
     grip_servant.request.position = width;
     grip_servant.request.speed = 1.0;
     grip_servant.request.force = 0.5;
     bool ret = gripper_client_.call(grip_servant);
-    if (grip_servant.response.rescode != 200) {
+    if (grip_servant.response.rescode != ResOK) {
         ROS_WARN("Gripper pre-close failed");
     }
     MA2010Service servant;
@@ -144,7 +144,6 @@ bool Coordinator::go_to_target_position(const geometry_msgs::TransformStamped& t
         // 成功移动到目标位置
         return true;
     }
-
     return false;
 }
 
@@ -165,11 +164,11 @@ bool Coordinator::go_to_destination() {
 bool Coordinator::close_gripper() {
     ROS_INFO("Closing gripper");
     GripperService grip_servant;
-    grip_servant.request.reqcode = 202;
+    grip_servant.request.reqcode = ReqGripperClose;
     grip_servant.request.speed = 1.0;
     grip_servant.request.force = 5.0;
     bool ret = gripper_client_.call(grip_servant);
-    if (ret && grip_servant.response.rescode == 200) {
+    if (ret && grip_servant.response.rescode == ResOK) {
         // 抬起末端，检查是否确实成功夹持物体
         MA2010Service ma_servant;
         ma_servant.request.reqcode = ReqGetCurPose;
@@ -184,9 +183,9 @@ bool Coordinator::close_gripper() {
             if (ret && ma_servant.response.rescode == ResOK) {
                 ROS_INFO("Lift up arm ..");
                 // 检查夹爪是否抓到了物体
-                grip_servant.request.reqcode = 205;
+                grip_servant.request.reqcode = ReqGetGripperState;
                 ret = gripper_client_.call(grip_servant);
-                if (ret && grip_servant.response.rescode == 200) {
+                if (ret && grip_servant.response.rescode == ResOK) {
                     // json字符串中提取出obj_detected字段的值
                     string res_json_str = grip_servant.response.data;
                     json j = json::parse(res_json_str);
@@ -206,7 +205,7 @@ bool Coordinator::close_gripper() {
 bool Coordinator::open_gripper() {
     ROS_INFO("Opening gripper");
     GripperService grip_servant;
-    grip_servant.request.reqcode = 201;
+    grip_servant.request.reqcode = ReqGripperOpen;
     bool ret = gripper_client_.call(grip_servant);
     return ret;
 }

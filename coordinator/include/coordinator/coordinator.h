@@ -17,6 +17,7 @@
 #include "ma2010_server/MA2010Service.h"
 #include "ma2010_server/ma2010_reqres.h"
 #include "gripper_server/GripperService.h"
+#include "gripper_server/gripper_reqres.h"
 #include "detection/DetectionResult.h"
 
 using namespace ros;
@@ -32,6 +33,7 @@ using ma2010_server::MA2010Service;
 using std_srvs::SetBool;
 using DetectionResultPtr = detection::DetectionResult::ConstPtr;
 
+// 需要用到的服务和话题名
 const static string MA2010_SERVICE_NAME = "/node_ma2010_service";
 const static string GRIPPER_SERVICE_NAME = "/node_gripper_service";
 const static string DETECTION_SERVICE_NAME = "/detection/switch_service";

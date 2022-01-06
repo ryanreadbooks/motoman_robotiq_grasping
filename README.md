@@ -19,7 +19,7 @@
 
 
 
-<img src="images/ma2010_tf_example.png" alt="ma2010" style="zoom:50%;" />
+<img src="images/ma2010_tf_example.png" alt="ma2010" style="zoom:40%;" />
 
 ## 环境
 
@@ -111,18 +111,19 @@ roslaunch ma2010_robotiq_moveit_config moveit_planning_execution.launch robot_ip
 2. 通过`rosservice call` 命令调用服务`/ryan/node_gripper_service`，指定请求码等参数
 
    ```bash
-   rosservice call /ryan/node_gripper_service "{reqcode: 200, position: 0.10, speed: 0.5, force: 1.0, comment: ''}"
+   rosservice call /ryan/node_gripper_service "{reqcode: 2000, position: 0.10, speed: 0.5, force: 1.0, comment: ''}"
    ```
 
 **reqcode说明**：
 
 ```python
-ReqGripperManualAction      = 200       # 手动动作，指定宽度、速度、力
-ReqGripperOpen              = 201       # 简单一个open动作
-ReqGripperClose             = 202       # 简单一个close动作
-ReqGripperStop              = 203       # 夹爪停止
-ReqGripperERelease          = 204       # 紧急释放夹爪
-ReqGripperDebug             = 210       # 调试功能
+ReqGripperManualAction      = 2000       # 手动动作，指定宽度、速度、力
+ReqGripperOpen              = 2001       # 简单一个open动作
+ReqGripperClose             = 2002       # 简单一个close动作
+ReqGripperStop              = 2003       # 夹爪停止
+ReqGripperERelease          = 2004       # 紧急释放夹爪
+ReqGetGripperState          = 2005       # 获取夹爪当前的状态
+ReqGripperDebug             = 2010       # 调试功能
 ```
 
 ---

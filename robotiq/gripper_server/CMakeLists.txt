@@ -35,6 +35,7 @@ generate_messages(
 
 
 catkin_package(
+ INCLUDE_DIRS include
  CATKIN_DEPENDS geometry_msgs message_generation roscpp rospy std_msgs
 )
 
@@ -45,6 +46,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -57,4 +59,9 @@ include_directories(
 catkin_install_python(PROGRAMS
   scripts/node_gripper_server.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+## Mark cpp header files for installation
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )

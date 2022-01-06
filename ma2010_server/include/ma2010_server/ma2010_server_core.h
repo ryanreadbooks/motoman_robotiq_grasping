@@ -2,7 +2,12 @@
 
 #include <string>
 #include <vector>
+#include <map>
+#include <functional>
 #include <ros/ros.h>
+#include <sstream>
+#include <exception>
+
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Pose.h>
@@ -13,10 +18,14 @@
 
 using namespace configor;   // for json
 
-using geometry_msgs::PoseStamped;
 using geometry_msgs::Pose;
-using std::vector;
+using geometry_msgs::PoseStamped;
+using std::stringstream;
+using std::bind;
+using std::function;
+using std::map;
 using std::string;
+using std::vector;
 using namespace moveit::planning_interface;
 
 using Ma2010Request = ma2010_server::MA2010ServiceRequest;
@@ -36,7 +45,7 @@ class Ma2010ServerCore {
     using PlanPtr = MoveGroupInterface::PlanPtr;
 
 public:
-    Ma2010ServerCore() {}
+    Ma2010ServerCore();
     Ma2010ServerCore(const Ma2010ServerCore &) = delete;
     Ma2010ServerCore &operator=(const Ma2010ServerCore &) = delete;
 
@@ -60,4 +69,6 @@ private:
 private:
     Ptr p_arm_;
     PlanPtr p_plan_;
+    // 请求码和请求处理函数的映射
+    map<int, function<void(Ma2010Response&, json&)>> request_mapping_;
 };
