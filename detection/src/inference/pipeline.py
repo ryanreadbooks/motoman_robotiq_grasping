@@ -164,13 +164,16 @@ class PlanarGraspDetector:
         tree = KDTree(np.asarray(cloud.points), leafsize=16)
         distances, indices = tree.query(grasp_point_cam_3d, k=1, workers=4)
         cloud_normals = np.asarray(cloud.normals)
-        grasps_orientation = cloud_normals[indices]    # (3,)
-        print(f'grasps_orientation = {grasps_orientation}')
-        gripper_frame_cam = GripperFrame.init(grasp_point_cam_3d, -grasps_orientation, -angle - np.pi / 2)
+        # grasps_orientation = -cloud_normals[indices]    # (3,)
+        # top-down grasping, 在moveit里面，x轴朝下了
+        grasps_orientation = np.array([1., 0., 0.])
+        print(f'angle = {angle}, grasps_orientation = {grasps_orientation}')
+        gripper_frame_cam = GripperFrame.init(grasp_point_cam_3d, grasps_orientation, -angle - np.pi / 2)
         grasp_pose_cam = gripper_frame_cam.to_6dpose()
 
         # 夹爪在相机坐标系下的旋转矩阵
         rotation_mat_cam = grasp_pose_cam[:3, :3]   # (3,3)
+        print(rotation_mat_cam)
         physical_grasp_width = width / self.map_size * 2 * z * np.tan(np.deg2rad(self.camera_params.fov * self.map_size / depth_img.shape[0] * 0.5))
         physical_grasp_width *= 1.1 # 稍微放宽一点
         # 最终实施抓取的夹爪张开宽度

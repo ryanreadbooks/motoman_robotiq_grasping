@@ -12,6 +12,7 @@ import copy
 import time
 import rospy
 import geometry_msgs.msg as gmsg
+from std_srvs.srv import SetBool, SetBoolRequest, SetBoolResponse
 import tf2_ros
 from cv_bridge import CvBridgeError, CvBridge
 from sensor_msgs.msg import Image
@@ -31,10 +32,12 @@ _cv_bridge: CvBridge = CvBridge()
 _rgb_queue = deque(maxlen=2)
 _depth_queue = deque(maxlen=2)
 
+# 标志是否正在进行检测
+_detection_on = True
+
 # tf广播器
 # Create broadcast node
 tf_broadcaster = tf2_ros.TransformBroadcaster()
-
 
 
 def subscribe_rgb(rgb: Image):
@@ -51,6 +54,22 @@ def subscribe_depth(depth: Image):
     """
     global _depth_queue
     _depth_queue.append(depth)
+
+
+def switch_service_handler(request: SetBoolRequest, ):
+    global _detection_on
+    _detection_on = request.data    # true表示继续检测，false表示停止检测
+
+    if _detection_on:
+        rospy.loginfo('Detection is going on')
+    else:
+        rospy.loginfo('Detection paused')
+
+    response: SetBoolResponse = SetBoolResponse()
+    response.success = True # 设置成功
+    response.message = 'Stop detecting' if not _detection_on else "Start detecting"
+
+    return response
 
 
 def infer():
@@ -107,7 +126,7 @@ def infer():
                 result_msg.message = 'Success'
                 rospy.loginfo('Grasp detection succeed.')
         except Exception as e:
-            rospy.logerr('Grasp detection failed due to exception {:s} of type {:s}'.format(str(e), str(type(e))))
+            rospy.logerr('Grasp detection failed due to exception {:s}, exception type is {:s}'.format(str(e), str(type(e))))
     else:
         result_msg.success = False
         result_msg.message = 'Can not read images from realsense camera!!'
@@ -134,6 +153,9 @@ if __name__ == '__main__':
     # 检测结果的发布话题
     detection_res_publisher = rospy.Publisher('/detection/result', DetectionResult, queue_size=5)
 
+    # 用一个服务来接收是否持续进行检测
+    detection_server = rospy.Service('/detection/switch_service', SetBool, switch_service_handler)
+
     # 获取相机内参
     d435i = CameraParams(cx=rospy.get_param('~intrinsics/cx'), 
                          cy=rospy.get_param('~intrinsics/cy'),
@@ -145,5 +167,6 @@ if __name__ == '__main__':
 
     rate = rospy.Rate(10) # 10hz
     while not rospy.is_shutdown():
-        infer()
-        rate.sleep()
+        if _detection_on:
+            infer()
+            rate.sleep()

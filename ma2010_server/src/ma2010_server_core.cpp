@@ -136,7 +136,8 @@ void Ma2010ServerCore::go_custom(const Pose& target, Ma2010Response& response, j
         ROS_ERROR("Plan failed! Can not plan motion given target pose");
         throw std::logic_error("Plan failed! Can not plan motion given target pose");
     }
-    move(response, res_json);
+    // move(response, res_json);
+    ROS_INFO("In custom mode, for debugging, plan only");
     ROS_INFO("Successfully move to target pose");
 }
 

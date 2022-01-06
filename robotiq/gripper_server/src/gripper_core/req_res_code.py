@@ -3,4 +3,5 @@ ReqGripperOpen              = 201       # 简单一个open动作
 ReqGripperClose             = 202       # 简单一个close动作
 ReqGripperStop              = 203       # 夹爪停止
 ReqGripperERelease          = 204       # 紧急释放夹爪
+ReqGetGripperState          = 205       # 获取夹爪当前的状态
 ReqGripperDebug             = 210       # 调试功能

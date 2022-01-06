@@ -1,3 +1,4 @@
+from os import stat
 from time import time
 import json
 
@@ -6,6 +7,7 @@ import actionlib
 
 from robotiq_2f_gripper_msgs.msg import CommandRobotiqGripperFeedback, CommandRobotiqGripperResult, CommandRobotiqGripperAction, CommandRobotiqGripperGoal
 from robotiq_2f_gripper_control.robotiq_2f_gripper_driver import Robotiq2FingerGripperDriver as Robotiq
+from robotiq_2f_gripper_control.robotiq_2f_gripper_driver import RobotiqGripperStatus
 
 from .req_res_code import *
 from gripper_server.srv import GripperServiceRequest, GripperServiceResponse, GripperService
@@ -70,6 +72,8 @@ class GripperServer:
             rescode, resdata = self._open(request.speed, request.force)
         elif reqcode == ReqGripperClose:
             rescode, resdata = self._close(request.speed, request.force)
+        elif reqcode == ReqGetGripperState:
+            rescode, resdata = self._get_hardware_state()
         elif reqcode == ReqGripperDebug:
             rescode, resdata = self.debug()
         else:
@@ -145,6 +149,23 @@ class GripperServer:
         rospy.sleep(0.1)
 
         return self.get_action_state()
+
+    def _get_hardware_state(self):
+        """
+        获取夹爪硬件现在的状态，包括电流等信息
+        """
+        status: RobotiqGripperStatus = Robotiq.get_current_gripper_status()
+        # status.header
+        # status.is_ready
+        # status.is_reset
+        # status.is_moving
+        # status.obj_detected
+        # status.fault_status
+        # status.position
+        # status.requested_position
+        # status.current
+
+        return self.OK, result_to_json_str(status)
 
     def debug(self):
         rospy.loginfo('DEBUGGING : gripper server running')
