@@ -60,9 +60,11 @@ private:
   // 回到检测原点位置
   bool back_to_origin();
   // 前往抓取目标位置
-  bool go_to_target_position(const geometry_msgs::TransformStamped &, double);
+  bool go_to_target_position(const geometry_msgs::TransformStamped &);
   // 前往释放点
   bool go_to_destination();
+  // 抬起机械臂
+  bool lift_up_arm();
 
   // 操作夹爪
   GripperService::Response operate_gripper(GripperOp, double);

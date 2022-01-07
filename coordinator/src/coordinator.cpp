@@ -6,6 +6,16 @@
 
 using namespace configor; // for json
 
+const static int SLEEP_USECS = 500000;  // 0.5s
+
+void check_need_throw_run_time_error(bool ret, const std::string& message) {
+  ROS_INFO("ret = %s", ret ? "True" : "False");
+  if (!ret)
+  {
+    throw std::runtime_error(message);
+  }
+}
+
 Coordinator::Coordinator() {
   // 初始化服务client和subsriber
   ma2010_client_ = handle_.serviceClient<MA2010Service>(MA2010_SERVICE_NAME);
@@ -18,30 +28,7 @@ Coordinator::Coordinator() {
 
 // 会在子线程中回调
 void Coordinator::detection_result_cb(const DetectionResultPtr &pd) {
-  // debug 测试
   pd_ = pd;
-  ROS_INFO("success = %d, grasp width=%f, message=%s", pd->success,
-           pd->grasp_width, pd->message.c_str());
-  try {
-    if (tf_buffer_.canTransform("base_link", "grasp_candidate", ros::Time(0))) {
-      TransformStamped trans = tf_buffer_.lookupTransform(
-          "base_link", "grasp_candidate", ros::Time(0));
-      double qw = trans.transform.rotation.w;
-      double qx = trans.transform.rotation.x;
-      double qy = trans.transform.rotation.y;
-      double qz = trans.transform.rotation.z;
-      double tx = trans.transform.translation.x;
-      double ty = trans.transform.translation.y;
-      double tz = trans.transform.translation.z;
-      ROS_INFO("base_link->grasp_candidate: (%.5f, %.5f, %.5f, %.5f, %.5f, "
-               "%.5f, %.5f)",
-               qw, qx, qy, qz, tx, ty, tz);
-    } else {
-      ROS_WARN("Can not find transform from base_link to grasp_candidate!");
-    }
-  } catch (tf2::LookupException &ex) {
-    ROS_WARN("%s", ex.what());
-  }
 }
 
 // 只进行一次步进
@@ -62,36 +49,45 @@ void Coordinator::run_once() {
       ROS_INFO("Grasp pose: [%f, %f, %f, %f, %f, %f, %f] (qw, qx, qy, qz, tx, "
                "ty, tz)",
                qw, qx, qy, qz, tx, ty, tz);
-
-      res = go_to_target_position(trans, pd_->grasp_width);
-      // 前往目的地
-      if (!res) {
-        ROS_ERROR("Can not move to target position, now exiting...");
-        throw std::runtime_error(
-            "Can not move to target position, now exiting...");
-      }
+      // 预闭合
+      res = set_gripper_width(pd_->grasp_width);
+      check_need_throw_run_time_error(res, "Can not set gripper width");
+      usleep(SLEEP_USECS);
+      // 前往抓取目的地
+      res = go_to_target_position(trans);
+      check_need_throw_run_time_error(res, "Can not go to target position");
+      usleep(SLEEP_USECS);
+      // 闭合夹爪
       res = close_gripper();
-      if (!res) {
-        // 抓取失败，则回到原点重新开始流程
-        ROS_WARN("Can not grasp the object, now returing to the origin...");
-        throw std::runtime_error(
-            "Can not grasp the object, now returing to the origin...");
-      }
-      // 抓取成功，移动到释放点
+      check_need_throw_run_time_error(res, "Can not close finger");
+      usleep(SLEEP_USECS);
+      // 抬起
+      res = lift_up_arm();
+      check_need_throw_run_time_error(res, "Can not lift up arm");
+      usleep(SLEEP_USECS);
+      // 检查是否成功夹取物体
+      res = obj_detected_between_fingers();
+      check_need_throw_run_time_error(res, "No object between fingers, grasp failed!!");
+      usleep(SLEEP_USECS);
+      return;
+      // 前往目标地点
       res = go_to_destination();
-      if (!res) {
-        ROS_WARN("Can not go to destination");
-        throw std::runtime_error("Can not go to destination, now exiting...");
-      }
-      // 成功移动到了释放点，开始释放夹爪
-      open_gripper();
+      check_need_throw_run_time_error(res, "Can not go to destination");
+      usleep(SLEEP_USECS);
+      // 松开夹爪
+      res = open_gripper();
+      usleep(SLEEP_USECS);
       // 回到原点
       back_to_origin();
-    } catch (std::exception &ex) {
+    }
+    catch (std::exception &ex)
+    {
       ROS_ERROR("%s", ex.what());
       pd_ = nullptr;
+      open_gripper();
       back_to_origin();
     }
+    ROS_INFO("Coordinator::run_once finished");
   }
 }
 
@@ -109,7 +105,7 @@ bool Coordinator::back_to_origin() {
 
 // 前往抓取目标位置
 bool Coordinator::go_to_target_position(
-    const geometry_msgs::TransformStamped &t, double width) {
+    const geometry_msgs::TransformStamped &t) {
   ROS_INFO("Going to grasp target position");
   Pose target_pose;
   target_pose.position.x = t.transform.translation.x;
@@ -120,8 +116,8 @@ bool Coordinator::go_to_target_position(
   target_pose.orientation.y = t.transform.rotation.y;
   target_pose.orientation.z = t.transform.rotation.z;
   // 对target pose的高度进行一些限制
-  target_pose.position.z = std::max(0.40, target_pose.position.z);
-  bool ret = operate_arm(ReqGoCustom, target_pose).rescode == ResOK;
+  target_pose.position.z = std::max(0.35, target_pose.position.z);
+  bool ret = operate_arm(ReqGoCustomWithPre, target_pose).rescode == ResOK;
   if (ret) {
     ROS_INFO("Successfully moved to target pose");
     return true;
@@ -142,6 +138,17 @@ bool Coordinator::go_to_destination() {
   return false;
 }
 
+// 抬起机械臂
+bool Coordinator::lift_up_arm() {
+  bool ret = operate_arm(ReqGoUp, Pose()).rescode == ResOK;
+  if (ret) {
+    ROS_INFO("Successfully moved up");
+    return true;
+  }
+  ROS_WARN("Can not move up");
+  return false;
+}
+
 // 机械臂操作统一请求
 MA2010Service::Response Coordinator::operate_arm(int op, Pose target) {
   MA2010Service ma_servant;
@@ -158,8 +165,8 @@ GripperService::Response Coordinator::operate_gripper(GripperOp op,
     grip_servant.request.reqcode = ReqGripperOpen;
   } else if (op == GripperOp::CLOSE) {
     grip_servant.request.reqcode = ReqGripperClose;
-    grip_servant.request.speed = 1.0;
-    grip_servant.request.force = 5.0;
+    grip_servant.request.speed = 0.7;
+    grip_servant.request.force = 1.3;
   } else if (op == GripperOp::MANUAL) {
     grip_servant.request.position = width;
     grip_servant.request.speed = 1.0;
@@ -175,18 +182,28 @@ GripperService::Response Coordinator::operate_gripper(GripperOp op,
 
 // 打开夹爪
 bool Coordinator::open_gripper() {
-  return operate_gripper(GripperOp::OPEN).rescode == ResOK;
+  int rescode = operate_gripper(GripperOp::OPEN).rescode;
+  ROS_INFO("Open gripper rescode = %d", rescode);
+  return rescode == ResOK;
 }
 
 bool Coordinator::close_gripper() {
-  return operate_gripper(GripperOp::CLOSE).rescode == ResOK;
+  int rescode = operate_gripper(GripperOp::CLOSE).rescode;
+  ROS_INFO("Close gripper rescode = %d", rescode);
+  return rescode == ResOK;
 }
 
 bool Coordinator::set_gripper_width(double width) {
-  return operate_gripper(GripperOp::MANUAL, width).rescode == ResOK;
+  int rescode = operate_gripper(GripperOp::MANUAL, width).rescode;
+  ROS_INFO("Manual gripper rescode = %d", rescode);
+  return rescode == ResOK;
 }
 
 bool Coordinator::obj_detected_between_fingers() {
-  json j = json::parse(operate_gripper(GripperOp::GET_STATE).data);
+  string res_data = operate_gripper(GripperOp::GET_STATE).data;
+  if (res_data.size() == 0) {
+    return false;
+  }
+  json j = json::parse(res_data);
   return (bool)j["obj_detected"];
 }

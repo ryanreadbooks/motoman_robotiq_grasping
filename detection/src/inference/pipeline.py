@@ -146,25 +146,27 @@ class PlanarGraspDetector:
         x = (x_raw - self.camera_params.cx) * z / self.camera_params.fx
         y = (y_raw - self.camera_params.cy) * z / self.camera_params.fy
         grasp_point_cam_3d = np.array([x, y, z])
-        # 末端姿态
+        
+        # TODO 末端姿态按照抓取点的法向量来，现在暂时不用法向量
         # 这里depth_scale给1,因为外面已经scale过了depth了
-        cloud = raw_generate_pc(rgb=rgb_img, depth=depth_img, depth_scale=1000.0, cam_intrin=self.camera_params.to_matrix())
-        if cloud.is_empty():
-            raise RuntimeError('the input point cloud is empty, rgb shape={:s}, depth shape={:s}'.format(str(rgb_img.shape), str(depth_img.shape)))
-        cloud.estimate_normals(
-            search_param=o3d.geometry.KDTreeSearchParamHybrid(
-                radius=0.005,
-                max_nn=30
-            )
-        )
-        cloud.normalize_normals()
-        cloud.orient_normals_towards_camera_location()  # 法向量指向相机位置
+        # cloud = raw_generate_pc(rgb=rgb_img, depth=depth_img, depth_scale=1000.0, cam_intrin=self.camera_params.to_matrix())
+        # if cloud.is_empty():
+        #     raise RuntimeError('the input point cloud is empty, rgb shape={:s}, depth shape={:s}'.format(str(rgb_img.shape), str(depth_img.shape)))
+        # cloud.estimate_normals(
+        #     search_param=o3d.geometry.KDTreeSearchParamHybrid(
+        #         radius=0.005,
+        #         max_nn=30
+        #     )
+        # )
+        # cloud.normalize_normals()
+        # cloud.orient_normals_towards_camera_location()  # 法向量指向相机位置
 
         # 为抓取点找到点云中最近的点，并且取出法向量
-        tree = KDTree(np.asarray(cloud.points), leafsize=16)
-        distances, indices = tree.query(grasp_point_cam_3d, k=1, workers=4)
-        cloud_normals = np.asarray(cloud.normals)
+        # tree = KDTree(np.asarray(cloud.points), leafsize=16)
+        # distances, indices = tree.query(grasp_point_cam_3d, k=1, workers=4)
+        # cloud_normals = np.asarray(cloud.normals)
         # grasps_orientation = -cloud_normals[indices]    # (3,)
+
         # top-down grasping, 在moveit里面，x轴朝下了
         grasps_orientation = np.array([1., 0., 0.])
         print(f'angle = {angle}, grasps_orientation = {grasps_orientation}')

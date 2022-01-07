@@ -27,5 +27,7 @@
   <include file="$(find ma2010_robotiq_moveit_config)/launch/moveit_rviz.launch">
     <arg name="config" value="true"/>
   </include>
+  <!-- load sensor configs -->
+  <!-- <rosparam command="load" file="$(find ma2010_robotiq_moveit_config)/config/sensors_3d.yaml"/> -->
 
 </launch>

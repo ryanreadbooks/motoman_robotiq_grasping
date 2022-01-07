@@ -5,7 +5,7 @@ import json
 import rospy
 import actionlib
 
-from robotiq_2f_gripper_msgs.msg import CommandRobotiqGripperFeedback, CommandRobotiqGripperResult, CommandRobotiqGripperAction, CommandRobotiqGripperGoal
+from robotiq_2f_gripper_msgs.msg import CommandRobotiqGripperFeedback, CommandRobotiqGripperResult, CommandRobotiqGripperAction, CommandRobotiqGripperActionFeedback
 from robotiq_2f_gripper_control.robotiq_2f_gripper_driver import Robotiq2FingerGripperDriver as Robotiq
 from robotiq_2f_gripper_control.robotiq_2f_gripper_driver import RobotiqGripperStatus
 
@@ -52,8 +52,14 @@ class GripperServer:
         """
         初始化
         """
+        print("init GripperServer")
         # 包含一个夹爪控制对象
         self._robotiq_client: actionlib.SimpleActionClient = robotiq_client
+        rospy.Subscriber('/command_robotiq_action/feedback', RobotiqGripperStatus, self.feedback_callback, queue_size=10)
+        self._gripper_status = None # 保留最近一次的夹爪状态，主要感兴趣的是obj_detected这个标志
+
+    def feedback_callback(self, feedback: CommandRobotiqGripperActionFeedback):
+        self._gripper_status = feedback
 
     def handle_request(self, request: GripperServiceRequest):
         """
@@ -83,6 +89,7 @@ class GripperServer:
         
         response.rescode = rescode
         response.data = resdata
+        rospy.loginfo(response)
         return response
 
     def get_action_state(self):
@@ -154,7 +161,7 @@ class GripperServer:
         """
         获取夹爪硬件现在的状态，包括电流等信息
         """
-        status: RobotiqGripperStatus = Robotiq.get_current_gripper_status()
+        # status: RobotiqGripperStatus = self._robotiq_driver.get_current_gripper_status()
         # status.header
         # status.is_ready
         # status.is_reset
@@ -164,8 +171,10 @@ class GripperServer:
         # status.position
         # status.requested_position
         # status.current
-
-        return self.OK, result_to_json_str(status)
+        if self._gripper_status is None:
+            return self.OK, ''
+        else:
+            return self.OK, result_to_json_str(self._gripper_status.feedback)
 
     def debug(self):
         rospy.loginfo('DEBUGGING : gripper server running')
