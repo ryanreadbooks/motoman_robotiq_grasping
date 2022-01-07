@@ -100,7 +100,15 @@ roslaunch ma2010_robotiq_moveit_config moveit_planning_execution.launch robot_ip
 
 
 
-## Robotiq夹爪功能测试
+## 节点关系图
+
+
+
+![节点关系图](images/architecture.png)
+
+
+
+### Robotiq夹爪功能测试
 
 1. 启动夹爪控制服务节点
 
@@ -108,7 +116,7 @@ roslaunch ma2010_robotiq_moveit_config moveit_planning_execution.launch robot_ip
    roslaunch gripper_server bringup_gripper_server.launch
    ```
 
-2. 通过`rosservice call` 命令调用服务`/ryan/node_gripper_service`，指定请求码等参数
+2. 通过`rosservice call` 命令调用服务`/node_gripper_service`，指定请求码等参数
 
    ```bash
    rosservice call /ryan/node_gripper_service "{reqcode: 2000, position: 0.10, speed: 0.5, force: 1.0, comment: ''}"
@@ -124,6 +132,41 @@ ReqGripperStop              = 2003       # 夹爪停止
 ReqGripperERelease          = 2004       # 紧急释放夹爪
 ReqGetGripperState          = 2005       # 获取夹爪当前的状态
 ReqGripperDebug             = 2010       # 调试功能
+```
+
+---
+
+
+
+### MA2010 Server功能
+
+1. 启动ma2010_server节点
+
+   ```bash
+   roslaunch ma2010_server bringup_ma2010_server.launch
+   ```
+
+2. 通过`rosservice call`命令调用服务`/node_ma2010_service`，指定请求码等参数
+
+**reqcode说明：**
+
+```python
+ReqGoHome             = 3000	# 回到原点
+ReqGoDest             = 3010	# 前往预设定目标位置
+ReqGoUp               = 3011	# 机械臂仅在z轴方向提升预设距离
+ReqGoDown             = 3012	# 机械臂仅在z轴方向下降预设距离
+ReqGoDetectionOrigin  = 3020	# 前往检测位置
+ReqGoCustom           = 3030	# 前往用户指定目标位置
+ReqGoCustomWithPre    = 3031	# 在前往指定位置前，会先前往一个预先的姿态点
+ReqGetCurPose         = 3040	# 获取当前机械臂的末端位姿
+ReqGetCurJoints       = 3050	# 获取当前机械臂的所有关节角度
+```
+
+**rescode响应码：**
+
+```python
+ResOK                 = 200;	# success
+ResFail               = 400;	# failure
 ```
 
 ---
