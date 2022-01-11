@@ -97,13 +97,14 @@ def infer():
                 rospy.logwarn('Grasp detection failed, can not find grasps!')
             else:
                 # 检测成功
-                _, tcp_cam, rot_mat_cam, img_with_grasps, physical_grasp_width = res
-                # 发布TF
+                _, tcp_cam, rot_mat_cam, img_with_grasps, physical_grasp_width, img_original_with_p = res
+                # 发布TF 检测的姿态结果发布出去
                 # TODO pose好像不太对
                 stamped_transform = gmsg.TransformStamped()
                 stamped_transform.header.stamp = rospy.Time.now()
                 # 发布相机坐标系下的抓取姿态坐标，这里如果用camera_link的话，不work
-                stamped_transform.header.frame_id = 'camera_depth_optical_frame'
+                # stamped_transform.header.frame_id = 'camera_depth_optical_frame'
+                stamped_transform.header.frame_id = 'camera_color_optical_frame'
                 stamped_transform.child_frame_id = 'grasp_candidate'
                 stamped_transform.transform.translation.x = tcp_cam[0]
                 stamped_transform.transform.translation.y = tcp_cam[1]
@@ -119,6 +120,7 @@ def infer():
                 tf_broadcaster.sendTransform(stamped_transform)
                 # 将检测的结果图片发布出去
                 result_img_publisher.publish(_cv_bridge.cv2_to_imgmsg(img_with_grasps[:,:,::-1]))   # 格式转换
+                result_img_publisher_ori.publish(_cv_bridge.cv2_to_imgmsg(img_original_with_p[:,:,::-1]))   # 格式转换
 
                 result_msg.success = True
                 result_msg.grasp_width = physical_grasp_width
@@ -150,6 +152,8 @@ if __name__ == '__main__':
 
     # 发布检测结果的图片的话题
     result_img_publisher = rospy.Publisher('/detection/grasps_result_image', Image, queue_size=5)
+    result_img_publisher_ori = rospy.Publisher('/detection/grasps_result_image_ori', Image, queue_size=5)
+
     # 检测结果的发布话题
     detection_res_publisher = rospy.Publisher('/detection/result', DetectionResult, queue_size=5)
 

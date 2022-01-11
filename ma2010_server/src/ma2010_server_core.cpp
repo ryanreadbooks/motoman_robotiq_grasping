@@ -32,6 +32,7 @@ void Ma2010ServerCore::init() {
     // 放慢速度
     p_arm_->setMaxAccelerationScalingFactor(0.07);
     p_arm_->setMaxVelocityScalingFactor(0.1);
+    p_arm_->allowReplanning(true);
   }
 }
 
@@ -69,6 +70,7 @@ bool Ma2010ServerCore::do_request(Ma2010Request &request,
 
 // 通过pose的方式设置机械臂运动目标
 void Ma2010ServerCore::set_target_pose(Pose &pose, const string &message) {
+  p_arm_->clearPoseTarget();
   // 检查pose的值是否合法
   if (pose.position.x == 0 && pose.position.y == 0 && pose.position.z == 0 &&
       pose.orientation.w == 0 && pose.orientation.x == 0 &&
@@ -76,14 +78,27 @@ void Ma2010ServerCore::set_target_pose(Pose &pose, const string &message) {
     throw std::invalid_argument(
         "Invalid target pose (all zero values received)");
   }
+  std::stringstream ss;
+  ss << "Ma2010ServerCore::set_target_pose, requested target pose (qw,qx,qy,qz,x,y,z) = "
+     << pose.orientation.w << " "
+     << pose.orientation.x << " "
+     << pose.orientation.y << " "
+     << pose.orientation.z << " "
+     << pose.position.x << " "
+     << pose.position.y << " "
+     << pose.position.z << " ";
+  ROS_INFO("%s", ss.str().c_str());
+  
   if (pose.position.z < MIN_Z) {
     ROS_WARN("Requested z value of pose position is %.5f, which may cause "
              "potential collision, "
-             "now altering it to minimum value of 0.35", pose.position.z);
+             "now altering it to minimum value of %.5f", pose.position.z, MIN_Z);
     pose.position.z = MIN_Z;
   }
-  bool opres = p_arm_->setPoseTarget(pose);
-  if (!opres) {
+  // bool opres = p_arm_->setPoseTarget(pose);  // 用这个函数有时容易失败
+  bool opres = p_arm_->setApproximateJointValueTarget(pose);  // 用求解IK的方法设置关节角，和setPoseTarget的原理不一致
+  if (!opres)
+  {
     ROS_ERROR("Can not set pose target for %s!", message.c_str());
     throw std::invalid_argument("Can not set pose target for " + message);
   }
@@ -97,25 +112,26 @@ void Ma2010ServerCore::plan_motion(const string &message) {
     ROS_ERROR("Plan failed! Can not plan motion for %s", message.c_str());
     throw std::logic_error("Plan failed! Can not plan motion for " + message);
   }
-  ROS_INFO("%s", "Current joints are :");
-
-  cout << "(-)";
+  // 显示规划的结果
+  std::stringstream ss;
+  ss << "(c)";
   for (const double& j : p_arm_->getCurrentJointValues()) {
-    cout << setprecision(10) << j << " ";
+    ss << setprecision(10) << j << " ";
   }
-  cout << endl;
+  ss << endl;
   vector<trajectory_msgs::JointTrajectoryPoint> planned_points = p_plan_->trajectory_.joint_trajectory.points;
-  ROS_INFO("Successfully planned trajectory with %d points, they are :", planned_points.size());
+  ROS_DEBUG("Successfully planned trajectory with %d points, they are :", static_cast<int> (planned_points.size()));
   for (int i = 0; i < planned_points.size(); ++i)
   {
-    cout << "(" << i << ")";
+    ss << "(" << i << ")";
     
     for (const double &value : planned_points[i].positions)
     {
-      cout << setprecision(10) << value << " ";
+      ss << setprecision(10) << value << " ";
     }
-    cout << endl;
+    ss << endl;
   }
+  ROS_DEBUG("%s", ss.str().c_str());
 }
 
 // 机械臂移动
@@ -220,7 +236,7 @@ void Ma2010ServerCore::go_custom(const Ma2010Request &request,
     throw std::invalid_argument("Can not set pose target!");
   }
   plan_motion("going to custom pose");
-  // move(request, response, res_json);
+  move(request, response, res_json);
   ROS_INFO("In custom mode, for debugging, plan only");
   ROS_INFO("Successfully move to target pose");
 }
@@ -230,7 +246,7 @@ void Ma2010ServerCore::go_custom_with_pre(const Ma2010Request &request,
                                           Ma2010Response &response,
                                           json &res_json) {
   ROS_INFO("%s", "Arm going to custom position with pre-point");
-	Pose target_pose = request.target;
+  Pose target_pose = request.target;
   Pose pre_target_pose = target_pose;
   pre_target_pose.position.z += 0.30;
   set_target_pose(pre_target_pose, "going to pre-target point");
@@ -240,32 +256,25 @@ void Ma2010ServerCore::go_custom_with_pre(const Ma2010Request &request,
   set_target_pose(target_pose, "going to target point");
   plan_motion("going to target point");
   move(request, response, res_json);
+
+  // 用waypoints
   // vector<Pose> waypoints = {pre_target_pose, target_pose};
   // moveit_msgs::RobotTrajectory trajectory;
-  // const double eef_step = 0.01;
   // const double jump_threshold = 0.0;
-  // int attempts = 0, max_tries = 10;
+  // const double eef_step = 0.01;
   // double fraction = 0.0;
-  // while (fraction < 1.0 && attempts < max_tries) {
-  //   fraction = p_arm_->computeCartesianPath(waypoints, eef_step,
-  //   jump_threshold,
-  //                                           trajectory);
+  // int max_try = 100;
+  // int attempts = 0;
+  // while (fraction < 1.0 && attempts < max_try) {
+  //   fraction = p_arm_->computeCartesianPath(waypoints, eef_step, jump_threshold, trajectory);
   //   attempts++;
   // }
-  // if (fraction == 1.0) {
-  //   ROS_INFO("Successfully planned cartesian trajectory.");
-  //   // p_plan_->trajectory_ = trajectory;
+  // if (fraction == 1) {
+  //   // 生成机械臂的运动规划数据
   //   moveit::planning_interface::MoveGroupInterface::Plan plan;
   //   plan.trajectory_ = trajectory;
-  //   if (p_arm_->execute(plan) ==
-  //   moveit::planning_interface::MoveItErrorCode::SUCCESS) {
-  //   	get_current_joints(request, response, res_json);
-  // 	} else {
-  // 		throw std::runtime_error("Can not follow the trajectory, motion
-  // failed!");
-  // 	}
-  // } else {
-  //   throw std::logic_error("Can not plan trajectory");
+  //   p_arm_->execute(plan);
+  //   sleep(1);
   // }
 }
 
@@ -282,7 +291,6 @@ void Ma2010ServerCore::get_current_joints(const Ma2010Request &request,
                                           json &res_json) const {
   // 获取pose
   response.curstate = p_arm_->getCurrentPose();
-  // 六个关节角
   vector<double> joints = p_arm_->getCurrentJointValues();
   res_json[StrJoints] = joints;
   if (joints.size() != 0) {

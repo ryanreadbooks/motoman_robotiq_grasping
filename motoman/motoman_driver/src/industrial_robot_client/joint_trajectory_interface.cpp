@@ -726,13 +726,18 @@ bool JointTrajectoryInterface::is_valid(const motoman_msgs::DynamicJointTrajecto
 void JointTrajectoryInterface::jointStateCB(
   const sensor_msgs::JointStateConstPtr &msg)
 {
-  this->cur_joint_pos_ = *msg;
+  // 防止取到了夹爪的关节
+  if (msg->name[0] == "joint_1_s") {
+    this->cur_joint_pos_ = *msg;
+  }
 }
 
 void JointTrajectoryInterface::jointStateCB(
   const sensor_msgs::JointStateConstPtr &msg, int robot_id)
 {
-  this->cur_joint_pos_map_[robot_id] = *msg;
+  if (msg->name[0] == "joint_1_s") {
+    this->cur_joint_pos_map_[robot_id] = *msg;
+  }
 }
 
 }  // namespace joint_trajectory_interface

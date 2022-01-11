@@ -64,12 +64,11 @@ void Coordinator::run_once() {
       // 抬起
       res = lift_up_arm();
       check_need_throw_run_time_error(res, "Can not lift up arm");
-      usleep(SLEEP_USECS);
+      sleep(1); // 等待夹爪得到正确的状态
       // 检查是否成功夹取物体
       res = obj_detected_between_fingers();
       check_need_throw_run_time_error(res, "No object between fingers, grasp failed!!");
       usleep(SLEEP_USECS);
-      return;
       // 前往目标地点
       res = go_to_destination();
       check_need_throw_run_time_error(res, "Can not go to destination");
@@ -87,14 +86,15 @@ void Coordinator::run_once() {
       open_gripper();
       back_to_origin();
     }
-    ROS_INFO("Coordinator::run_once finished");
+    ROS_INFO("Coordinator::run_once finished, you can press Ctrl+C to exit now");
   }
 }
 
 // 回到检测原点位置
 bool Coordinator::back_to_origin() {
   ROS_INFO("Go back to origin");
-  bool ret = operate_arm(ReqGoDetectionOrigin, Pose()).rescode == ResOK;
+  Pose tp;
+  bool ret = operate_arm(ReqGoDetectionOrigin, tp).rescode == ResOK;
   if (ret) {
     ROS_INFO("Reached origin");
     return true;
@@ -116,6 +116,7 @@ bool Coordinator::go_to_target_position(
   target_pose.orientation.y = t.transform.rotation.y;
   target_pose.orientation.z = t.transform.rotation.z;
   // 对target pose的高度进行一些限制
+  target_pose.position.z -= 0.02;
   target_pose.position.z = std::max(0.35, target_pose.position.z);
   bool ret = operate_arm(ReqGoCustomWithPre, target_pose).rescode == ResOK;
   if (ret) {
@@ -129,7 +130,8 @@ bool Coordinator::go_to_target_position(
 // 前往释放点
 bool Coordinator::go_to_destination() {
   ROS_INFO("Going to destination");
-  bool ret = operate_arm(ReqGoDest, Pose()).rescode == ResOK;
+  Pose tp;
+  bool ret = operate_arm(ReqGoDest, tp).rescode == ResOK;
   if (ret) {
     ROS_INFO("Reached destination");
     return true;
@@ -140,7 +142,8 @@ bool Coordinator::go_to_destination() {
 
 // 抬起机械臂
 bool Coordinator::lift_up_arm() {
-  bool ret = operate_arm(ReqGoUp, Pose()).rescode == ResOK;
+  Pose tp;
+  bool ret = operate_arm(ReqGoUp, tp).rescode == ResOK;
   if (ret) {
     ROS_INFO("Successfully moved up");
     return true;
@@ -150,7 +153,7 @@ bool Coordinator::lift_up_arm() {
 }
 
 // 机械臂操作统一请求
-MA2010Service::Response Coordinator::operate_arm(int op, Pose target) {
+MA2010Service::Response Coordinator::operate_arm(int op, Pose& target) {
   MA2010Service ma_servant;
   ma_servant.request.reqcode = op;
   ma_servant.request.target = target;

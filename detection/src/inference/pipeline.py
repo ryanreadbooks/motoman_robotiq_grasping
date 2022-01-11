@@ -9,7 +9,8 @@ import time
 
 import numpy as np
 import torch
-from scipy.spatial import KDTree
+import cv2
+# from scipy.spatial import KDTree
 
 from .network import PSPNet
 from .infer_tools import pack_single_image, decode_graspmap, decode_net_output
@@ -113,9 +114,9 @@ class PlanarGraspDetector:
         if pred_grasp_pts.shape[0] == 0:
             # 没有检测到结果
             return (False, )
-        tcp_cam, rot_mat_cam, physical_grasp_width = self.gen_grasp_pose(pred_grasp_pts, angle, width, img, depth)
+        tcp_cam, rot_mat_cam, physical_grasp_width, img_original_with_p = self.gen_grasp_pose(pred_grasp_pts, angle, width, img, depth)
 
-        return True, tcp_cam, rot_mat_cam, img_with_grasps, physical_grasp_width
+        return True, tcp_cam, rot_mat_cam, img_with_grasps, physical_grasp_width, img_original_with_p
 
 
     def gen_grasp_pose(self, grasp_pts, angle_map, width_map, rgb_img, depth_img):
@@ -140,13 +141,15 @@ class PlanarGraspDetector:
         left = 320 - self.map_size // 2 # (640 // 2 - self.map_size // 2)
         top = 240 - self.map_size // 2 # (480 // 2 - self.map_size // 2)
         y_raw, x_raw = top + y, left + x
+        rgb_img = cv2.circle(rgb_img, (x_raw, y_raw), radius=5, color=(255, 0, 0), thickness=cv2.FILLED)
         # 得到深度，单位化为m
         z = depth_img[y_raw, x_raw] / 1000.0
         # 抓取点转到相机坐标系下
-        x = (x_raw - self.camera_params.cx) * z / self.camera_params.fx
-        y = (y_raw - self.camera_params.cy) * z / self.camera_params.fy
-        grasp_point_cam_3d = np.array([x, y, z])
-        
+        x_cam = (x_raw - self.camera_params.cx) * z / self.camera_params.fx
+        y_cam = (y_raw - self.camera_params.cy) * z / self.camera_params.fy
+        grasp_point_cam_3d = np.array([x_cam, y_cam, z])
+        print(f'detection result on image: x_raw = {x_raw}, y_raw={y_raw}, z={z}')
+        print(f'detection result on camera coordinate: x = {x_cam}, y={y_cam}, z={z}')
         # TODO 末端姿态按照抓取点的法向量来，现在暂时不用法向量
         # 这里depth_scale给1,因为外面已经scale过了depth了
         # cloud = raw_generate_pc(rgb=rgb_img, depth=depth_img, depth_scale=1000.0, cam_intrin=self.camera_params.to_matrix())
@@ -184,5 +187,5 @@ class PlanarGraspDetector:
         # 往前前进1cm，得到最终夹爪末端TCP应该到达的位置
         tcp_position_cam = grasp_point_cam_3d + rotation_mat_cam[:, -1] * 0.01
 
-        return tcp_position_cam, rotation_mat_cam, physical_grasp_width
+        return tcp_position_cam, rotation_mat_cam, physical_grasp_width, rgb_img
         

@@ -56,7 +56,7 @@ public:
 
 private:
   // 操作机械臂
-  MA2010Service::Response operate_arm(int, Pose);
+  MA2010Service::Response operate_arm(int, Pose&);
   // 回到检测原点位置
   bool back_to_origin();
   // 前往抓取目标位置

@@ -108,6 +108,7 @@ roslaunch ma2010_robotiq_moveit_config moveit_planning_execution.launch robot_ip
 
 
 
+
 ### Robotiq夹爪功能测试
 
 1. 启动夹爪控制服务节点
