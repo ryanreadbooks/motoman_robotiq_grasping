@@ -1,0 +1,42 @@
+<launch>
+
+    <!-- realsense相机节点 -->
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch" >
+        <arg name="device_type" value="d435"/>
+        <arg name="align_depth" value="true"/>
+
+        <arg name="depth_width" value="640"/>
+        <arg name="depth_height" value="480"/>
+        
+        <arg name="color_width" value="640"/>
+        <arg name="color_height" value="480"/>
+        
+        <arg name="enable_pointcloud" value="true"/>
+    </include>
+
+    <arg name="camera_namespace" default="/camera/color" doc="The topic namespace containing the camera's camera_info and image_rect_color topics" />
+    <arg name="dictionary" default="DICT_6X6_250" doc="The OpenCV ID of the ArUco dictionary used to create the markers (e.g. DICT_6X6_250)" />
+
+    <arg name="camera_frame" default="camera_color_optical_frame" doc="The tf frame corresponding to the optical frame of the RGB camera" />
+    <arg name="reference_frame" default="camera_color_optical_frame" doc="The tf frame with respect to which the pose will be published" />
+
+    <arg name="marker_size" default="0.016" doc="The size of the markers placed on the white squares of the chessboard (in meters)" />
+    <arg name="square_size" default="0.024" doc="The size of the squares of the chessboard (in meters)" />
+    <arg name="square_number_x" default="7" doc="The number of squares in the x direction" />
+    <arg name="square_number_y" default="9" doc="The number of squares in the y direction" />
+
+    <node pkg="easy_aruco" type="easy_aruco_node" name="easy_aruco_node" output="screen" >
+        <param name="object_type" value="charuco_board" />
+
+        <param name="camera_namespace" value="$(arg camera_namespace)" />
+        <param name="dictionary" value="$(arg dictionary)" />
+
+        <param name="camera_frame" value="$(arg camera_frame)" />
+        <param name="reference_frame" value="$(arg reference_frame)" />
+
+        <param name="marker_size" value="$(arg marker_size)" />
+        <param name="square_size" value="$(arg square_size)" />
+        <param name="square_number_x" value="$(arg square_number_x)" />
+        <param name="square_number_y" value="$(arg square_number_y)" />
+    </node>
+</launch>

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="namespace_prefix" default="ma2010_d435i_handeyecalibration" />
+  <arg name="eye_on_hand" default="true" />
+  <!-- start easy_handeye -->
+  <include file="$(find easy_handeye)/launch/calibrate.launch" >
+      <arg name="namespace_prefix" value="$(arg namespace_prefix)" />
+      <arg name="eye_on_hand" value="$(arg eye_on_hand)" />
+
+      <arg name="tracking_base_frame" value="camera_color_optical_frame" />
+      <arg name="tracking_marker_frame" value="board" />
+      <arg name="robot_base_frame" value="base_link" />
+      <arg name="robot_effector_frame" value="grasping_frame" />
+
+      <arg name="freehand_robot_movement" value="false" />
+      <arg name="robot_velocity_scaling" value="0.5" />
+      <arg name="robot_acceleration_scaling" value="0.1" />
+      <arg name="translation_delta_meters" default="0.05"  />
+      <arg name="rotation_delta_degrees" default="20"  />
+  </include>
+
+</launch>
