@@ -128,6 +128,7 @@
     <disable_collisions link1="link_4_r" link2="right_inner_finger" reason="Never" />
     <disable_collisions link1="link_4_r" link2="right_inner_finger_pad" reason="Never" />
     <disable_collisions link1="link_4_r" link2="right_inner_knuckle" reason="Never" />
+    <disable_collisions link1="link_4_r" link2="robotiq_arg2f_base_link" reason="Never" />
     <disable_collisions link1="link_5_b" link2="link_6_t" reason="Adjacent" />
     <disable_collisions link1="link_5_b" link2="right_inner_finger" reason="Never" />
     <disable_collisions link1="link_5_b" link2="right_inner_finger_pad" reason="Never" />
@@ -156,4 +157,6 @@
     <disable_collisions link1="right_outer_finger" link2="right_outer_knuckle" reason="Adjacent" />
     <disable_collisions link1="right_outer_finger" link2="robotiq_arg2f_base_link" reason="Never" />
     <disable_collisions link1="right_outer_knuckle" link2="robotiq_arg2f_base_link" reason="Adjacent" />
+    <disable_collisions link1="right_inner_finger_pad" link2="left_inner_finger_pad" reason="Adjacent" />
+
 </robot>

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+  
+  <!-- 机械臂节点 -->
+  <include file="$(find ma2010_server)/launch/bringup_ma2010_server.launch"/>
+
+  <!-- aruco节点，里面包含了相机节点的启动 -->
+  <include file="$(find easy_aruco)/launch/track_charuco_board.launch"/>
+
+  <!-- easy_handeye -->
+  <include file="$(find easy_handeye)/launch/bringup_calibrate.launch"/>
+  
+</launch>

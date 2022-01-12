@@ -5,7 +5,6 @@ import tf2_ros
 import geometry_msgs.msg
 from easy_handeye.handeye_calibration import HandeyeCalibration
 
-
 rospy.init_node('handeye_calibration_publisher')
 while rospy.get_time() == 0.0:
     pass

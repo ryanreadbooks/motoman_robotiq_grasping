@@ -7,7 +7,7 @@ Panels:
         - /MotionPlanning1
         - /MotionPlanning1/Scene Robot1
         - /MotionPlanning1/Planning Request1
-        - /TF1/Frames1
+        - /TF1
       Splitter Ratio: 0.5372023582458496
     Tree Height: 409
   - Class: rviz/Help
@@ -341,11 +341,11 @@ Visualization Manager:
         camera_color_frame:
           Value: false
         camera_color_optical_frame:
-          Value: false
+          Value: true
         camera_depth_frame:
           Value: false
         camera_depth_optical_frame:
-          Value: true
+          Value: false
         camera_link:
           Value: false
         grasp_candidate:
@@ -405,16 +405,9 @@ Visualization Manager:
                     link_6_t:
                       tool0:
                         grasping_frame:
-                          camera_link:
-                            camera_aligned_depth_to_color_frame:
-                              camera_color_optical_frame:
-                                {}
-                            camera_color_frame:
+                          camera_color_optical_frame:
+                            grasp_candidate:
                               {}
-                            camera_depth_frame:
-                              camera_depth_optical_frame:
-                                grasp_candidate:
-                                  {}
                         robotiq_arg2f_base_link:
                           left_inner_knuckle:
                             {}
@@ -502,7 +495,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 4.278485298156738
+      Distance: 1.715998888015747
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -517,10 +510,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4447968304157257
+      Pitch: 0.4747968316078186
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 5.0513386726379395
+      Yaw: 4.841337203979492
     Saved: ~
 Window Geometry:
   Displays:

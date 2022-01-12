@@ -32,10 +32,19 @@
     <arg name="ry" value="1.44065"/>
     <arg name="rz" value="88.787"/>
 
+    <arg name="qx" value="-0.5146710160099053" />
+    <arg name="qy" value="0.4963062370587139" />
+    <arg name="qz" value="-0.5072768386750054" />
+    <arg name="qw" value="0.4811071328507235" />
+    <arg name="x" value="-0.24435441521426188" />
+    <arg name="y" value="0.03398190911800965" />
+    <arg name="z" value="0.1142620117698149" />
+    
     <!-- TF发布：发布相机的外参：这里用的是眼在手上，所以发布相机和机械臂工具末端静态的变换关系 -->
     <!-- 旋转角度参数为：yaw pitch roll -->
     <!-- yaw is rotation about z-axis, pitch is rotation about y-axis, roll is rotation about x-axis -->
     <!-- <node name="camera_extrinsic_publisher" pkg="tf" type="static_transform_publisher"  output="screen" respawn="true" args="-0.24792 -0.0346583 0.127258 ${rz/57.29} ${ry/57.29} ${rx/57.29} grasping_frame camera_link 20" /> -->
-    <node name="camera_extrinsic_publisher" pkg="tf" type="static_transform_publisher"  output="screen" respawn="true" args="-0.24792 -0.0346583 0.127258 ${rz/57.29} ${ry/57.29} ${rx/57.29} grasping_frame camera_link 20" />
+    <node name="camera_extrinsic_publisher" pkg="tf" type="static_transform_publisher"  output="screen" respawn="true" args="-0.24435441521426188 0.03398190911800965 0.1142620117698149 -0.5146710160099053 0.4963062370587139 -0.5072768386750054 0.4811071328507235 grasping_frame camera_color_optical_frame 20" />
+
 
 </launch>

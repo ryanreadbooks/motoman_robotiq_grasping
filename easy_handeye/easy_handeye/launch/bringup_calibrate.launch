@@ -13,10 +13,12 @@
       <arg name="robot_effector_frame" value="grasping_frame" />
 
       <arg name="freehand_robot_movement" value="false" />
+      <arg name="start_sampling_gui" value="true"/>
+      
       <arg name="robot_velocity_scaling" value="0.5" />
       <arg name="robot_acceleration_scaling" value="0.1" />
       <arg name="translation_delta_meters" default="0.05"  />
-      <arg name="rotation_delta_degrees" default="20"  />
+      <arg name="rotation_delta_degrees" default="25"  />
   </include>
-
+  
 </launch>
