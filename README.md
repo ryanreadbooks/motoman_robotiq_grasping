@@ -174,9 +174,53 @@ ResFail               = 400;	# failure
 
 
 
+## 眼在手上标定
+
+眼在手上标定在`Docker`中进行，[镜像下载地址](https://hub.docker.com/r/rimiercivl/kinetic-desktop-full/tags)。需要提前下载好[Docker](https://docs.docker.com/engine/install/)和[nvidia-docker](https://github.com/NVIDIA/nvidia-docker)。
+
+> 包含手眼标定的代码在分支[calibration](https://github.com/ryanreadbooks/motoman_robotiq_grasping/tree/calibration)中，clone了本仓库后，可以使用`git checkout calibration`命令切换到分支。
+
+1. 启动镜像
+
+   ```bash
+   chmod +x ./docker_run.bash
+   ./docker_run.bash
+   ```
+
+2. 进入容器后，本仓库的代码所在路径为：`/codes/demo_ws`
+
+   ```bash
+   cd /codes/demo_ws
+   source devel/setup.bash
+   
+   # 连接上机械臂、相机，启动下面三个launch文件
+   roslaunch ma2010_server bringup_ma2010_server.launch
+   roslaunch easy_aruco track_charuco_board.launch 
+   roslaunch easy_handeye bringup_calibrate.launch 
+   ```
+
+   `注意：`若要在Docker中启动多个终端，在本机终端中使用`docker exec -it CONTAINER_NAME /bin/bash `即可进入，进入后需要再次source环境变量
+
+   ```bash
+   # 本机终端执行
+   docker exec -it CONTAINER_NAME /bin/bash	# CONTAINER_NAME为跑起来后容器的名称，可以通过docker ps查看
+   # 执行完上面这句话后，就会进入到容器里面了，再执行下面的source环境变量
+   source /etc/profile
+   ```
+
+3. 可以手动操作开始进行标定。参考[easy_handeye](https://github.com/IFL-CAMP/easy_handeye)
+
+**效果图如下：**
+
+![easy_handeye手眼标定效果图](images/eye_in_hand_calib.png)
+
+
+
 ## 致谢
 
 * [ros-industrial/motoman](https://github.com/ros-industrial/motoman)
 * [Danfoa/robotiq_2finger_grippers](https://github.com/Danfoa/robotiq_2finger_grippers)
 * [Nomango/configor](https://github.com/Nomango/configor)
+* [easy_handeye](https://github.com/IFL-CAMP/easy_handeye)
+* [easy_aruco](https://github.com/marcoesposito1988/easy_aruco)
 
