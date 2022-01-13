@@ -8,7 +8,8 @@ Panels:
         - /MotionPlanning1/Scene Robot1
         - /MotionPlanning1/Planning Request1
         - /TF1
-      Splitter Ratio: 0.5372023582458496
+        - /PointCloud21
+      Splitter Ratio: 0.4446130394935608
     Tree Height: 409
   - Class: rviz/Help
     Name: Help
@@ -397,6 +398,8 @@ Visualization Manager:
         base_link:
           base:
             {}
+          grasp_candidate:
+            {}
           link_1_s:
             link_2_l:
               link_3_u:
@@ -406,8 +409,7 @@ Visualization Manager:
                       tool0:
                         grasping_frame:
                           camera_color_optical_frame:
-                            grasp_candidate:
-                              {}
+                            {}
                         robotiq_arg2f_base_link:
                           left_inner_knuckle:
                             {}
@@ -458,10 +460,10 @@ Visualization Manager:
       Name: PointCloud2
       Position Transformer: XYZ
       Queue Size: 10
-      Selectable: true
+      Selectable: false
       Size (Pixels): 3
       Size (m): 0.009999999776482582
-      Style: Flat Squares
+      Style: Points
       Topic: /camera/depth/color/points
       Unreliable: false
       Use Fixed Frame: true
@@ -495,7 +497,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 1.715998888015747
+      Distance: 3.5653488636016846
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -510,10 +512,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4747968316078186
+      Pitch: 0.5397969484329224
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 4.841337203979492
+      Yaw: 4.226339817047119
     Saved: ~
 Window Geometry:
   Displays:

@@ -4,6 +4,7 @@ import json
 
 import rospy
 import actionlib
+from std_srvs.srv import SetBool, SetBoolRequest
 
 from robotiq_2f_gripper_msgs.msg import CommandRobotiqGripperFeedback, CommandRobotiqGripperResult, CommandRobotiqGripperAction, CommandRobotiqGripperActionFeedback
 from robotiq_2f_gripper_control.robotiq_2f_gripper_driver import Robotiq2FingerGripperDriver as Robotiq
@@ -121,9 +122,17 @@ class GripperServer:
         """
         夹爪紧急释放
         """
-        rospy.logwarn(f'Emergency release triggered')
+        message = 'Emergency release triggered, after that, gripper server can be served anymore, now respawning gripper server'
+        rospy.logwarn(message)
         Robotiq.emergency_release(self._robotiq_client)
         rospy.sleep(0.1)
+
+        # 紧急释放后重启夹爪功能
+        rospy.loginfo('Gripper server now respawning ... ')
+        servant = rospy.ServiceProxy('node_gripper_daemon_service', SetBool)
+        req = SetBoolRequest()
+        servant.call(req)
+        rospy.signal_shutdown(message)
         
         return self.get_action_state()
 
@@ -142,8 +151,15 @@ class GripperServer:
         打开到最大
         """
         rospy.loginfo(f'Opening the gripper using speed = {speed}, force = {force}')
-        Robotiq.open(self._robotiq_client, speed, force)
-        rospy.sleep(0.1)
+        Robotiq.open(self._robotiq_client, speed, force, block=True)
+        rospy.sleep(1.0)
+        
+        # 有可能打开失败，打开失败就意味着需要紧急释放了
+        # 0.140000000596
+        diff = abs(self._gripper_status.position - self._gripper_status.requested_position)
+        if self._gripper_status is not None and diff >= 0.0001:
+            rospy.logwarn('diff = %.6f, position = %.6f, requested_position = %.6f', diff, self._gripper_status.position, self._gripper_status.requested_position)
+            self._emergent_release()
 
         return self.get_action_state()
 

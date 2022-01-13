@@ -111,6 +111,7 @@ def infer():
                 stamped_transform.transform.translation.y = tcp_cam[1]
                 stamped_transform.transform.translation.z = tcp_cam[2]
 
+                # 构建相机坐标系下的姿态
                 gp = gmsg.Pose()
                 gp.position.x = tcp_cam[0]
                 gp.position.y = tcp_cam[1]
@@ -120,7 +121,7 @@ def infer():
                 # 转换到基座标系下
                 gp_base = convert_pose(gp, 'camera_color_optical_frame', 'base_link')
 
-                q = tft.quaternion_from_euler(np.pi, 0, angle)
+                q = tft.quaternion_from_euler(-angle - np.pi / 2, np.pi / 2, -np.pi / 2, )
                 gp_base.orientation.x = q[0]
                 gp_base.orientation.y = q[1]
                 gp_base.orientation.z = q[2]

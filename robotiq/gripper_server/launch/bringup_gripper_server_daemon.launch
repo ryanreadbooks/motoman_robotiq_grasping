@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node name="node_gripper_server_daemon" pkg="gripper_server" type="node_gripper_server_daemon.py" output="screen" respawn="false" />
+
+</launch>

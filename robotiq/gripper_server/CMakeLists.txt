@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  std_srvs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -36,7 +37,7 @@ generate_messages(
 
 catkin_package(
  INCLUDE_DIRS include
- CATKIN_DEPENDS geometry_msgs message_generation roscpp rospy std_msgs
+ CATKIN_DEPENDS geometry_msgs message_generation roscpp rospy std_msgs std_srvs
 )
 
 ###########
@@ -58,6 +59,7 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
   scripts/node_gripper_server.py
+  scripts/node_gripper_server_daemon.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
