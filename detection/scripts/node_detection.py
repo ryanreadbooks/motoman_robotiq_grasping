@@ -7,9 +7,6 @@
 """
 
 import sys
-sys.path.remove('/home/ryan/Codes/lab/yaskawa_vision_grasp/src/detection/scripts')
-sys.path.append('/home/ryan/Codes/lab/yaskawa_vision_grasp/src/detection/scripts')
-print(sys.path)
 import time
 from collections import deque
 
@@ -27,7 +24,6 @@ import pytransform3d.rotations as pr
 from helper.transform_utils import convert_pose, publish_pose_as_transform
 from detection.msg import DetectionResult
 from inference import PlanarGraspDetector, CameraParams
-# from helper.transform_utils import *
 
 
 # 全局常量定义

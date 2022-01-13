@@ -4,3 +4,6 @@
 [submodule "geometry2"]
 	path = geometry2
 	url = https://github.com/ros/geometry2.git
+[submodule "orocos_kinematics_dynamics"]
+	path = orocos_kinematics_dynamics
+	url = https://github.com/orocos/orocos_kinematics_dynamics.git
