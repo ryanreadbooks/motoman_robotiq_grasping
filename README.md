@@ -19,7 +19,7 @@
 
 
 
-<img src="images/ma2010_tf_example.png" alt="ma2010" style="zoom:40%;" />
+<img src="images/demo.png" alt="ma2010" style="zoom:80%;" />
 
 ## 环境
 

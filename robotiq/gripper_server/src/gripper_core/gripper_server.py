@@ -55,11 +55,11 @@ class GripperServer:
         print("init GripperServer")
         # 包含一个夹爪控制对象
         self._robotiq_client: actionlib.SimpleActionClient = robotiq_client
-        rospy.Subscriber('/command_robotiq_action/feedback', RobotiqGripperStatus, self.feedback_callback, queue_size=10)
-        self._gripper_status = None # 保留最近一次的夹爪状态，主要感兴趣的是obj_detected这个标志
+        rospy.Subscriber('/robotiq/gripper_online_status', RobotiqGripperStatus, self.online_status_cb, queue_size=10)
+        self._gripper_status = None # 缓存最近一次的夹爪状态，主要感兴趣的是obj_detected这个标志
 
-    def feedback_callback(self, feedback: CommandRobotiqGripperActionFeedback):
-        self._gripper_status = feedback
+    def online_status_cb(self, status: RobotiqGripperStatus):
+        self._gripper_status = status
 
     def handle_request(self, request: GripperServiceRequest):
         """
@@ -172,9 +172,9 @@ class GripperServer:
         # status.requested_position
         # status.current
         if self._gripper_status is None:
-            return self.OK, ''
+            return self.FAIL, ''
         else:
-            return self.OK, result_to_json_str(self._gripper_status.feedback)
+            return self.OK, result_to_json_str(self._gripper_status)
 
     def debug(self):
         rospy.loginfo('DEBUGGING : gripper server running')

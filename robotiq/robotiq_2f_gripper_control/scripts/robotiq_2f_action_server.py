@@ -98,7 +98,7 @@ class CommandGripperActionServer(object):
       result = feedback                                   # Message declarations are the same 
       # Send result 
       if not self._is_stalled:
-          rospy.logdebug(self._action_name + ": goal reached or object detected Pos: %.3f PosRequested: %.3f ObjectDetected: %r" % (goal_command.position, feedback.requested_position, feedback.obj_detected) )
+          rospy.loginfo(self._action_name + ": goal reached or object detected Pos: %.3f PosRequested: %.3f ObjectDetected: %r" % (goal_command.position, feedback.requested_position, feedback.obj_detected) )
           self._action_server.set_succeeded(result)  
       else:
           rospy.logerr(self._action_name + ": goal aborted Pos: %.3f PosRequested: %.3f ObjectDetected: %r" % (goal_command.position, feedback.requested_position, feedback.obj_detected) )

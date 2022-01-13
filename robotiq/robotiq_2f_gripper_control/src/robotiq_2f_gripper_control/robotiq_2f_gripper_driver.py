@@ -93,7 +93,8 @@ class Robotiq2FingerGripperDriver:
         else:
             rospy.loginfo("Connection to gripper with stroke %.3f[m] on port %s successful" % ( self._gripper.stroke, self._comport))
 
-        self._gripper_joint_state_pub = rospy.Publisher("/robotiq/joint_states" , JointState, queue_size=10)        
+        self._gripper_joint_state_pub = rospy.Publisher("/robotiq/joint_states" , JointState, queue_size=10)
+        self._gripper_status_pub = rospy.Publisher("/robotiq/gripper_online_status" , RobotiqGripperStatus, queue_size=10)        
 
         self._seq = 0
         self._prev_joint_pos = 0.0
@@ -273,9 +274,14 @@ class Robotiq2FingerGripperDriver:
         # Check if communication is broken
         update_time = rospy.get_time()
         if success:
+            # 发布夹爪的关节信息
             js = JointState()
             js = self._update_gripper_joint_state()
             self._gripper_joint_state_pub.publish(js)
+            # 发布夹爪的状态信息，包括开度、电流、是否有物体等信息
+            stat = RobotiqGripperStatus()
+            stat = self.get_current_gripper_status()
+            self._gripper_status_pub.publish(stat)
             self._last_update_time = update_time
         
         # If communication failed, check if connection was truly lost

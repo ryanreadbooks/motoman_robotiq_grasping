@@ -64,7 +64,7 @@ void Coordinator::run_once() {
       // 抬起
       res = lift_up_arm();
       check_need_throw_run_time_error(res, "Can not lift up arm");
-      sleep(1); // 等待夹爪得到正确的状态
+      sleep(2); // 等待夹爪得到正确的状态
       // 检查是否成功夹取物体
       res = obj_detected_between_fingers();
       check_need_throw_run_time_error(res, "No object between fingers, grasp failed!!");
