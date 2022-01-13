@@ -6,18 +6,25 @@
 检测节点 - 负责进行抓取检测，与realsense相机直接打交道
 """
 
-from collections import deque
-import os
-import copy
+import sys
+sys.path.remove('/home/ryan/Codes/lab/yaskawa_vision_grasp/src/detection/scripts')
+sys.path.append('/home/ryan/Codes/lab/yaskawa_vision_grasp/src/detection/scripts')
+print(sys.path)
 import time
+from collections import deque
+
 import rospy
 import geometry_msgs.msg as gmsg
-from std_srvs.srv import SetBool, SetBoolRequest, SetBoolResponse
 import tf2_ros
+import tf.transformations as tft
+from std_srvs.srv import SetBool, SetBoolRequest, SetBoolResponse
 from cv_bridge import CvBridgeError, CvBridge
+
+import numpy as np
 from sensor_msgs.msg import Image
 import pytransform3d.rotations as pr
 
+from helper.transform_utils import convert_pose, publish_pose_as_transform
 from detection.msg import DetectionResult
 from inference import PlanarGraspDetector, CameraParams
 # from helper.transform_utils import *
@@ -27,7 +34,7 @@ from inference import PlanarGraspDetector, CameraParams
 NODE_DETECTION_NAME = 'node_detection'
 
 
-_cv_bridge: CvBridge = CvBridge()
+_cv_bridge = CvBridge()
 # 队列用来存放realsense话题中的rgb图和depth图
 _rgb_queue = deque(maxlen=2)
 _depth_queue = deque(maxlen=2)
@@ -56,7 +63,7 @@ def subscribe_depth(depth: Image):
     _depth_queue.append(depth)
 
 
-def switch_service_handler(request: SetBoolRequest, ):
+def switch_service_handler(request: SetBoolRequest):
     global _detection_on
     _detection_on = request.data    # true表示继续检测，false表示停止检测
 
@@ -97,18 +104,32 @@ def infer():
                 rospy.logwarn('Grasp detection failed, can not find grasps!')
             else:
                 # 检测成功
-                _, tcp_cam, rot_mat_cam, img_with_grasps, physical_grasp_width, img_original_with_p = res
+                _, tcp_cam, angle, rot_mat_cam, img_with_grasps, physical_grasp_width, img_original_with_p = res
                 # 发布TF 检测的姿态结果发布出去
                 # TODO pose好像不太对
                 stamped_transform = gmsg.TransformStamped()
                 stamped_transform.header.stamp = rospy.Time.now()
-                # 发布相机坐标系下的抓取姿态坐标，这里如果用camera_link的话，不work
-                # stamped_transform.header.frame_id = 'camera_depth_optical_frame'
                 stamped_transform.header.frame_id = 'camera_color_optical_frame'
                 stamped_transform.child_frame_id = 'grasp_candidate'
                 stamped_transform.transform.translation.x = tcp_cam[0]
                 stamped_transform.transform.translation.y = tcp_cam[1]
                 stamped_transform.transform.translation.z = tcp_cam[2]
+
+                gp = gmsg.Pose()
+                gp.position.x = tcp_cam[0]
+                gp.position.y = tcp_cam[1]
+                gp.position.z = tcp_cam[2]
+                gp.orientation.w = 1
+
+                # 转换到基座标系下
+                gp_base = convert_pose(gp, 'camera_color_optical_frame', 'base_link')
+
+                q = tft.quaternion_from_euler(np.pi, 0, angle)
+                gp_base.orientation.x = q[0]
+                gp_base.orientation.y = q[1]
+                gp_base.orientation.z = q[2]
+                gp_base.orientation.w = q[3]
+
                 # 旋转矩阵转化为四元数
                 qw, qx, qy, qz = pr.quaternion_from_matrix(rot_mat_cam)
                 rospy.loginfo('qw={:.5f}, qx={:.5f}, qy={:.5f}, qz={:.5f}'.format(qw, qx, qy, qz))
@@ -117,7 +138,10 @@ def infer():
                 stamped_transform.transform.rotation.z = qz
                 stamped_transform.transform.rotation.w = qw
 
-                tf_broadcaster.sendTransform(stamped_transform)
+                # tf_broadcaster.sendTransform(stamped_transform)   # old
+
+                publish_pose_as_transform(gp_base, "base_link", "grasp_candidate", 0.5)
+
                 # 将检测的结果图片发布出去
                 result_img_publisher.publish(_cv_bridge.cv2_to_imgmsg(img_with_grasps[:,:,::-1]))   # 格式转换
                 result_img_publisher_ori.publish(_cv_bridge.cv2_to_imgmsg(img_original_with_p[:,:,::-1]))   # 格式转换

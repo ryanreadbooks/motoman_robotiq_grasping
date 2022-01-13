@@ -6,7 +6,6 @@
 import os
 import time
 
-
 import numpy as np
 import torch
 import cv2
@@ -55,6 +54,10 @@ class CameraParams:
         return np.array([[self._fx, 0., self._cx], 
                          [0., self._fy, self._cy], 
                          [0., 0., 1.]])
+
+
+def detection_log(msg):
+    print(f"node_detection::pipeline => {msg}")
 
 
 class PlanarGraspDetector:
@@ -114,9 +117,9 @@ class PlanarGraspDetector:
         if pred_grasp_pts.shape[0] == 0:
             # 没有检测到结果
             return (False, )
-        tcp_cam, rot_mat_cam, physical_grasp_width, img_original_with_p = self.gen_grasp_pose(pred_grasp_pts, angle, width, img, depth)
+        tcp_cam, angle, rot_mat_cam, physical_grasp_width, img_original_with_p = self.gen_grasp_pose(pred_grasp_pts, angle, width, img, depth)
 
-        return True, tcp_cam, rot_mat_cam, img_with_grasps, physical_grasp_width, img_original_with_p
+        return True, tcp_cam, angle, rot_mat_cam, img_with_grasps, physical_grasp_width, img_original_with_p
 
 
     def gen_grasp_pose(self, grasp_pts, angle_map, width_map, rgb_img, depth_img):
@@ -148,8 +151,8 @@ class PlanarGraspDetector:
         x_cam = (x_raw - self.camera_params.cx) * z / self.camera_params.fx
         y_cam = (y_raw - self.camera_params.cy) * z / self.camera_params.fy
         grasp_point_cam_3d = np.array([x_cam, y_cam, z])
-        print(f'detection result on image: x_raw = {x_raw}, y_raw={y_raw}, z={z}')
-        print(f'detection result on camera coordinate: x = {x_cam}, y={y_cam}, z={z}')
+        detection_log(f'detection result on image: x_raw = {x_raw}, y_raw={y_raw}, z={z}')
+        detection_log(f'detection result on camera coordinate: x = {x_cam}, y={y_cam}, z={z}')
         # TODO 末端姿态按照抓取点的法向量来，现在暂时不用法向量
         # 这里depth_scale给1,因为外面已经scale过了depth了
         # cloud = raw_generate_pc(rgb=rgb_img, depth=depth_img, depth_scale=1000.0, cam_intrin=self.camera_params.to_matrix())
@@ -170,22 +173,22 @@ class PlanarGraspDetector:
         # cloud_normals = np.asarray(cloud.normals)
         # grasps_orientation = -cloud_normals[indices]    # (3,)
 
-        # top-down grasping, 在moveit里面，x轴朝下了
+        # TODO 存在问题： top-down grasping, 在moveit里面，x轴朝下了
         grasps_orientation = np.array([1., 0., 0.])
-        print(f'angle = {angle}, grasps_orientation = {grasps_orientation}')
         gripper_frame_cam = GripperFrame.init(grasp_point_cam_3d, grasps_orientation, -angle - np.pi / 2)
         grasp_pose_cam = gripper_frame_cam.to_6dpose()
 
         # 夹爪在相机坐标系下的旋转矩阵
         rotation_mat_cam = grasp_pose_cam[:3, :3]   # (3,3)
-        print(rotation_mat_cam)
         physical_grasp_width = width / self.map_size * 2 * z * np.tan(np.deg2rad(self.camera_params.fov * self.map_size / depth_img.shape[0] * 0.5))
         physical_grasp_width *= 1.1 # 稍微放宽一点
         # 最终实施抓取的夹爪张开宽度
-        physical_grasp_width = np.clip(physical_grasp_width, 0.0, 0.14) # 限制在最大抓取宽度内，单位m
+        physical_grasp_width_final = np.clip(physical_grasp_width, 0.0, 0.10) # 限制在最大抓取宽度内，单位m
 
+        detection_log(f'angle = {angle} rad ({np.rad2deg(angle)} degrees), grasps_orientation = {grasps_orientation}, width = {physical_grasp_width_final}({physical_grasp_width})')
+        detection_log(rotation_mat_cam)
         # 往前前进1cm，得到最终夹爪末端TCP应该到达的位置
         tcp_position_cam = grasp_point_cam_3d + rotation_mat_cam[:, -1] * 0.01
-
-        return tcp_position_cam, rotation_mat_cam, physical_grasp_width, rgb_img
+        
+        return tcp_position_cam, angle, rotation_mat_cam, physical_grasp_width_final, rgb_img
         
