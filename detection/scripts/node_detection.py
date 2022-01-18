@@ -118,14 +118,15 @@ def infer():
                 gp.position.z = tcp_cam[2]
                 gp.orientation.w = 1
 
-                # 转换到基座标系下
+                # 转换到基座标系下，三维平移先变换过去
                 gp_base = convert_pose(gp, 'camera_color_optical_frame', 'base_link')
-
-                q = tft.quaternion_from_euler(-angle - np.pi / 2, np.pi / 2, -np.pi / 2, )
+                # 再单独变换姿态，角度全部统一成顺时针旋转
+                q = tft.quaternion_from_euler(np.pi + angle, np.pi / 2, 0)
                 gp_base.orientation.x = q[0]
                 gp_base.orientation.y = q[1]
                 gp_base.orientation.z = q[2]
                 gp_base.orientation.w = q[3]
+                publish_pose_as_transform(gp_base, "base_link", "grasp_candidate", 0.5)
 
                 # 旋转矩阵转化为四元数
                 qw, qx, qy, qz = pr.quaternion_from_matrix(rot_mat_cam)
@@ -136,9 +137,6 @@ def infer():
                 stamped_transform.transform.rotation.w = qw
 
                 # tf_broadcaster.sendTransform(stamped_transform)   # old
-
-                publish_pose_as_transform(gp_base, "base_link", "grasp_candidate", 0.5)
-
                 # 将检测的结果图片发布出去
                 result_img_publisher.publish(_cv_bridge.cv2_to_imgmsg(img_with_grasps[:,:,::-1]))   # 格式转换
                 result_img_publisher_ori.publish(_cv_bridge.cv2_to_imgmsg(img_original_with_p[:,:,::-1]))   # 格式转换

@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+    
+    <arg name="debug" default="true"/>
+    
+    <node name="node_coordinator" pkg="coordinator" type="node_coordinator"  output="screen" respawn="false" >
+        <param name="debug_mode" value="$(arg debug)"/>
+    </node>
+
+</launch>

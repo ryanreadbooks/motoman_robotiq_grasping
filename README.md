@@ -31,12 +31,24 @@
 
 ### 前置条件
   1. 安装[ROS](https://wiki.ros.org/kinetic/Installation/Ubuntu)
-  2. 安装[realsense-ros](https://github.com/IntelRealSense/realsense-ros)
+
+     ```bash
+     # 包括ros-controller
+     sudo apt-get install ros-kinetic-ros-control
+     sudo apt-get install ros-kinetic-ros-controller
+     sudo apt-get install ros-kinetic-moveit
+     ```
+
+    2. 安装[realsense-ros](https://github.com/IntelRealSense/realsense-ros)
+
+
 
 
 ### 安川机械臂驱动和夹爪驱动
-1. 安川机械臂机械臂驱动使用[ros-industrial/motoman](https://github.com/ros-industrial/motoman)，本仓库删除了一些无关的内容，仅保留ma2010_support
-2. Robotiq 2F-140使用[Danfoa/robotiq_2finger_grippers](https://github.com/Danfoa/robotiq_2finger_grippers)的代码进行驱动，已集成在本仓库中。
+1. 安川机械臂机械臂驱动使用[ros-industrial/motoman](https://github.com/ros-industrial/motoman)，本仓库删除了一些无关的内容，仅保留ma2010_support；
+2. Robotiq 2F-140使用[Danfoa/robotiq_2finger_grippers](https://github.com/Danfoa/robotiq_2finger_grippers)的代码进行驱动，对某些部分进行修改并集成在本仓库中。
+
+
 
 
 ### 安装本仓库
@@ -176,7 +188,7 @@ ResFail               = 400;	# failure
 
 ## 眼在手上标定
 
-眼在手上标定在`Docker`中进行，[镜像下载地址](https://hub.docker.com/r/rimiercivl/kinetic-desktop-full/tags)。需要提前下载好[Docker](https://docs.docker.com/engine/install/)和[nvidia-docker](https://github.com/NVIDIA/nvidia-docker)。
+眼在手上标定在`Docker`中进行，[镜像下载地址](https://hub.docker.com/r/rimiercivl/kinetic-desktop-full/tags)。需要提前下载安装好[Docker](https://docs.docker.com/engine/install/)和[nvidia-docker](https://github.com/NVIDIA/nvidia-docker)。
 
 > 包含手眼标定的代码在分支[calibration](https://github.com/ryanreadbooks/motoman_robotiq_grasping/tree/calibration)中，clone了本仓库后，可以使用`git checkout calibration`命令切换到分支。
 

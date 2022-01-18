@@ -4,6 +4,7 @@
 
 from os import read
 import rospy
+import rosgraph
 # Brings in the SimpleActionClient
 import actionlib
 

@@ -4,7 +4,7 @@
 import os
 import rospy
 import subprocess
-import roslaunch
+import rosnode
 from std_srvs.srv import SetBool, SetBoolRequest, SetBoolResponse
 
 package = 'gripper_server'
@@ -30,9 +30,15 @@ def service_handler(request: SetBoolRequest):
 
 	return response
 
+
+def on_shutdown():
+	rospy.loginfo('Now shutting down gripper server daemon server, below is running nodes...')
+	print(rosnode.get_node_names())
+
 if __name__ == "__main__":
 	gripper_server_on = False
 	rospy.init_node('node_gripper_server_daemon')
+	rospy.on_shutdown(on_shutdown)
 	daemon_server = rospy.Service('node_gripper_daemon_service', SetBool, service_handler)
 	rospy.loginfo('gripper daemon on...')
 

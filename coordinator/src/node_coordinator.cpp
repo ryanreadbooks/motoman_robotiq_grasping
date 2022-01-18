@@ -3,15 +3,16 @@
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "node_coordinator");
-
+  
   Coordinator coordinator;
 
-  ros::AsyncSpinner spinner(3);
+  ros::AsyncSpinner spinner(6);
   spinner.start();
 
   sleep(1);
-  coordinator.run_once();
+  // coordinator.run_once();
+
+  // coordinator.run();
 
   ros::waitForShutdown();
-  // ros::spin();
 }

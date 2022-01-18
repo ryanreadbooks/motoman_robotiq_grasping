@@ -6,17 +6,18 @@
 
 using namespace configor; // for json
 
-const static int SLEEP_USECS = 500000;  // 0.5s
+const static int SLEEP_USECS = 500000; // 0.5s
 
-void check_need_throw_run_time_error(bool ret, const std::string& message) {
+void check_need_throw_run_time_error(bool ret, const std::string &message) {
   ROS_INFO("ret = %s", ret ? "True" : "False");
-  if (!ret)
-  {
+  if (!ret) {
     throw std::runtime_error(message);
   }
 }
 
 Coordinator::Coordinator() {
+  // 初始化模式
+  handle_.param<bool>(DEBUG_PARAM_NAME, is_debug_, true);
   // 初始化服务client和subsriber
   ma2010_client_ = handle_.serviceClient<MA2010Service>(MA2010_SERVICE_NAME);
   gripper_client_ = handle_.serviceClient<GripperService>(GRIPPER_SERVICE_NAME);
@@ -24,18 +25,29 @@ Coordinator::Coordinator() {
   detection_res_sub_ = handle_.subscribe(
       DETECTION_TOPIC_RESULT_NAME, 5, &Coordinator::detection_result_cb, this);
   p_tf_listener_.reset(new tf2_ros::TransformListener(tf_buffer_));
+
+  namespace HD = std::placeholders;
+  switch_mode_server_ = handle_.advertiseService(
+      COORDINATOR_SWITCH_MODE_SERVICE_NAME, &Coordinator::do_switch_mode_service, this);
+
+  start_stop_server_ = handle_.advertiseService(
+      COORDINATOR_START_OR_STOP_RUNNING_NAME, &Coordinator::do_start_stop_service, this);
+  
+  debug_run_once_server_ = handle_.advertiseService(
+      COORDINATOR_DEBUG_RUN_ONCE_NAME, &Coordinator::do_debug_run_once_service, this);
+
 };
 
 // 会在子线程中回调
 void Coordinator::detection_result_cb(const DetectionResultPtr &pd) {
-  pd_ = pd;
+  p_det_res_ = pd;
 }
 
 // 只进行一次步进
-void Coordinator::run_once() {
+bool Coordinator::run_once() {
   // 从检测结果中得到抓取目标并且前往
   bool res = false;
-  if (pd_ != nullptr && pd_->success) {
+  if (p_det_res_ != nullptr && p_det_res_->success) {
     try {
       TransformStamped trans = tf_buffer_.lookupTransform(
           "base_link", "grasp_candidate", ros::Time(0.0));
@@ -50,7 +62,7 @@ void Coordinator::run_once() {
                "ty, tz)",
                qw, qx, qy, qz, tx, ty, tz);
       // 预闭合
-      res = set_gripper_width(pd_->grasp_width);
+      res = set_gripper_width(p_det_res_->grasp_width);
       check_need_throw_run_time_error(res, "Can not set gripper width");
       usleep(SLEEP_USECS);
       // 前往抓取目的地
@@ -67,7 +79,8 @@ void Coordinator::run_once() {
       sleep(2); // 等待夹爪得到正确的状态
       // 检查是否成功夹取物体
       res = obj_detected_between_fingers();
-      check_need_throw_run_time_error(res, "No object between fingers, grasp failed!!");
+      check_need_throw_run_time_error(
+          res, "No object between fingers, grasp failed!!");
       usleep(SLEEP_USECS);
       // 前往目标地点
       res = go_to_destination();
@@ -78,16 +91,63 @@ void Coordinator::run_once() {
       usleep(SLEEP_USECS);
       // 回到原点
       back_to_origin();
-    }
-    catch (std::exception &ex)
-    {
+    } catch (std::exception &ex) {
       ROS_ERROR("%s", ex.what());
-      pd_ = nullptr;
-      open_gripper();
+      p_det_res_ = nullptr;
+      open_gripper(); // may throw exception due to gripper server done and cause crash
       back_to_origin();
+      return false;
     }
-    ROS_INFO("Coordinator::run_once finished, you can press Ctrl+C to exit now");
+    return true;
   }
+}
+
+// 启动coordinator
+void Coordinator::run() {
+  // 在自动模式，并且已经启动
+  while (ros::ok()) {
+    // 自动模式运行，每次检测到就去抓取
+    if (!is_debug_ && is_started_) {
+      sleep(2);
+      run_once();
+    }
+    spinOnce();
+  }
+}
+
+bool Coordinator::do_switch_mode_service(SetBool::Request &req, SetBool::Response &res) {
+  is_debug_ = req.data; // 是否为debug模式
+  res.success = true;
+  res.message = is_debug_ ? "Successfully set to debug mode" : "Successfully set to auto mode";
+  handle_.setParam(DEBUG_PARAM_NAME, is_debug_);
+  return true;
+}
+
+// 在自动运行情况下，进行开始和结束的切换
+bool Coordinator::do_start_stop_service(SetBool::Request &req, SetBool::Response &res) {
+  // 不是在自动模式下，不能自己动作
+  if (is_debug_) {
+    res.success = false;
+    res.message = "Can not start auto running in debug mode, call service /coordinator/switch to set debug to false";
+    return true;
+  }
+  is_started_ = req.data;
+  res.success = true;
+  res.message = is_started_ ? "Start running in auto mode" : "Stop running";
+  return true;
+}
+
+bool Coordinator::do_debug_run_once_service(Trigger::Request &req, Trigger::Response &res) {
+  // 自动模式下，不能够单独call run_once
+  if (!is_debug_) {
+    res.success = false;
+    res.message = "Can not call run_once service in auto mode";
+    return true;
+  }
+  // 开始run_once，返回是否执行成功
+  res.success = run_once();
+  res.message = res.success ? "Succeed" : "Failed";
+  return true;
 }
 
 // 回到检测原点位置
@@ -116,7 +176,7 @@ bool Coordinator::go_to_target_position(
   target_pose.orientation.y = t.transform.rotation.y;
   target_pose.orientation.z = t.transform.rotation.z;
   // 对target pose的高度进行一些限制
-  target_pose.position.z -= 0.02;
+  target_pose.position.z -= 0.025;
   target_pose.position.z = std::max(0.35, target_pose.position.z);
   bool ret = operate_arm(ReqGoCustomWithPre, target_pose).rescode == ResOK;
   if (ret) {
@@ -153,7 +213,7 @@ bool Coordinator::lift_up_arm() {
 }
 
 // 机械臂操作统一请求
-MA2010Service::Response Coordinator::operate_arm(int op, Pose& target) {
+MA2010Service::Response Coordinator::operate_arm(int op, Pose &target) {
   MA2010Service ma_servant;
   ma_servant.request.reqcode = op;
   ma_servant.request.target = target;
