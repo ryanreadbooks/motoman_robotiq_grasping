@@ -9,10 +9,5 @@ int main(int argc, char **argv) {
   ros::AsyncSpinner spinner(6);
   spinner.start();
 
-  sleep(1);
-  // coordinator.run_once();
-
-  // coordinator.run();
-
   ros::waitForShutdown();
 }

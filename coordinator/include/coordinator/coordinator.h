@@ -5,6 +5,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <iostream>
+#include <sstream>
 #include <map>
 #include <memory>
 #include <ros/ros.h>
@@ -61,12 +62,10 @@ public:
   void detection_result_cb(const DetectionResultPtr &pd);
   // 只运行一次
   bool run_once();
-  // 启动coordinator
-  void run();
   // 切换模式服务函数
   bool do_switch_mode_service(SetBool::Request &req, SetBool::Response &res);
   // 开始和停止运行服务函数
-  bool do_start_stop_service(AutoGrasping::Request &req, AutoGrasping::Response &res);
+  bool do_start_auto_service(AutoGrasping::Request &req, AutoGrasping::Response &res);
   // 调试模式下，运行一次
   bool do_debug_run_once_service(Trigger::Request &req, Trigger::Response &res);
 
@@ -97,7 +96,7 @@ private:
   // 标记是否为调试模式
   bool is_debug_ = true;
   // 在自动模式下，标记是否正在运行
-  bool is_started_ = false;
+  bool is_auto_running_ = false;
   NodeHandle handle_;
   ServiceClient ma2010_client_;
   ServiceClient gripper_client_;
@@ -106,7 +105,7 @@ private:
   // 切换模式服务
   ServiceServer switch_mode_server_;
   // 自动模式下，流程开始和停止服务
-  ServiceServer start_stop_server_;
+  ServiceServer start_auto_server_;
   // 调试模式下，触发运动一次的服务
   ServiceServer debug_run_once_server_;
   tf2_ros::Buffer tf_buffer_;

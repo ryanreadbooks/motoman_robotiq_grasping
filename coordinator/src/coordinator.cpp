@@ -18,24 +18,22 @@ void check_need_throw_run_time_error(bool ret, const std::string &message) {
 Coordinator::Coordinator() {
   // 初始化模式
   handle_.param<bool>(DEBUG_PARAM_NAME, is_debug_, true);
-  // 初始化服务client和subsriber
+  // 初始化服务client和subscriber
   ma2010_client_ = handle_.serviceClient<MA2010Service>(MA2010_SERVICE_NAME);
   gripper_client_ = handle_.serviceClient<GripperService>(GRIPPER_SERVICE_NAME);
   detection_client_ = handle_.serviceClient<SetBool>(DETECTION_SERVICE_NAME);
-  detection_res_sub_ = handle_.subscribe(
-      DETECTION_TOPIC_RESULT_NAME, 5, &Coordinator::detection_result_cb, this);
+  detection_res_sub_ = handle_.subscribe( DETECTION_TOPIC_RESULT_NAME, 5, &Coordinator::detection_result_cb, this);
   p_tf_listener_.reset(new tf2_ros::TransformListener(tf_buffer_));
 
   namespace HD = std::placeholders;
-  switch_mode_server_ = handle_.advertiseService(
-      COORDINATOR_SWITCH_MODE_SERVICE_NAME, &Coordinator::do_switch_mode_service, this);
+  switch_mode_server_ = handle_.advertiseService(COORDINATOR_SWITCH_MODE_SERVICE_NAME,
+                               &Coordinator::do_switch_mode_service, this);
 
-  start_stop_server_ = handle_.advertiseService(
-      COORDINATOR_START_OR_STOP_RUNNING_NAME, &Coordinator::do_start_stop_service, this);
-  
-  debug_run_once_server_ = handle_.advertiseService(
-      COORDINATOR_DEBUG_RUN_ONCE_NAME, &Coordinator::do_debug_run_once_service, this);
+  start_auto_server_ = handle_.advertiseService(COORDINATOR_START_OR_STOP_RUNNING_NAME,
+                               &Coordinator::do_start_auto_service, this);
 
+  debug_run_once_server_ = handle_.advertiseService(COORDINATOR_DEBUG_RUN_ONCE_NAME,
+                               &Coordinator::do_debug_run_once_service, this);
 };
 
 // 会在子线程中回调
@@ -102,43 +100,65 @@ bool Coordinator::run_once() {
   }
 }
 
-// 启动coordinator
-// TODO 待改进
-void Coordinator::run() {
-  // 在自动模式，并且已经启动
-  while (ros::ok()) {
-    // 自动模式运行，每次检测到就去抓取
-    if (!is_debug_ && is_started_) {
-      sleep(2);
-      run_once();
-    }
-    spinOnce();
-  }
-}
-
-bool Coordinator::do_switch_mode_service(SetBool::Request &req, SetBool::Response &res) {
+// 调试模式和自动模式切换
+bool Coordinator::do_switch_mode_service(SetBool::Request &req,
+                                         SetBool::Response &res) {
   is_debug_ = req.data; // 是否为debug模式
   res.success = true;
-  res.message = is_debug_ ? "Successfully set to debug mode" : "Successfully set to auto mode";
+  res.message = is_debug_ ? "Successfully set to debug mode"
+                          : "Successfully set to auto mode";
   handle_.setParam(DEBUG_PARAM_NAME, is_debug_);
   return true;
 }
 
-// 在自动运行情况下，进行开始和结束的切换
-bool Coordinator::do_start_stop_service(AutoGrasping::Request &req, AutoGrasping::Response &res) {
+// 在自动运行情况下，进行开启自动抓取物体的作业
+// 其实可以改为action的通信
+bool Coordinator::do_start_auto_service(AutoGrasping::Request &req,
+                                        AutoGrasping::Response &res) {
   // 不是在自动模式下，不能自己动作
   if (is_debug_) {
     res.success = false;
-    res.message = "Can not start auto running in debug mode, call service /coordinator/switch to set debug to false";
+    res.message = "Can not start auto running in debug mode, call service "
+                  "coordinator/switch_service and set data to false";
     return true;
   }
-  is_started_ = req.data;
+  ros::Time st = ros::Time::now();
+  is_auto_running_ = true;
+  ROS_INFO("Triggered auto pick-and-place, number of objects to grasped is %d, "
+           "max attempts is %d",
+           req.n_object, req.max_attempts);
+  unsigned int n_cur_grasped_objs = 0; // 成功抓取的次数
+  unsigned int cur_attempt = 0;        // 当前尝试的次数
+  // 当还没有抓取完所有物体，并且还剩余抓取次数才能保持自动运行状态
+  while (n_cur_grasped_objs < req.n_object && cur_attempt <= req.max_attempts) {
+    cur_attempt++;
+    ROS_INFO("In auto running mode, now in attempt-%d", cur_attempt);
+    bool res = run_once();
+    if (!res) {
+      // 失败
+      ROS_WARN("Attempt-%d failed, completion is (%d/%d)", cur_attempt,
+               n_cur_grasped_objs, req.n_object);
+    }
+    // 成功
+    n_cur_grasped_objs++;
+    sleep(1);
+    ROS_INFO("Attempt-%d succeed, current completion is (%d/%d)", cur_attempt,
+             n_cur_grasped_objs, req.n_object);
+  }
   res.success = true;
-  res.message = is_started_ ? "Start running in auto mode" : "Stop running";
+  std::stringstream ss;
+  double duration = (ros::Time::now() - st).toSec();
+  ss << "Successfully grasped " << n_cur_grasped_objs << " objects out of "
+     << req.n_object << " objects in " << duration << " seconds";
+  res.message = ss.str();
+
+  ROS_INFO("Response took %.6f seconds", duration);
+  is_auto_running_ = false;
   return true;
 }
 
-bool Coordinator::do_debug_run_once_service(Trigger::Request &req, Trigger::Response &res) {
+bool Coordinator::do_debug_run_once_service(Trigger::Request &req,
+                                            Trigger::Response &res) {
   // 自动模式下，不能够单独call run_once
   if (!is_debug_) {
     res.success = false;
@@ -222,8 +242,7 @@ MA2010Service::Response Coordinator::operate_arm(int op, Pose &target) {
   return ma_servant.response;
 }
 
-GripperService::Response Coordinator::operate_gripper(GripperOp op,
-                                                      double width = 0.0) {
+GripperService::Response Coordinator::operate_gripper(GripperOp op, double width = 0.0) {
   GripperService grip_servant;
   if (op == GripperOp::OPEN) {
     grip_servant.request.reqcode = ReqGripperOpen;
