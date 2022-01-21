@@ -58,8 +58,6 @@
   <build_export_depend>rospy</build_export_depend>
   <build_export_depend>std_msgs</build_export_depend>
 
-  <exec_depend>panda_moveit_config</exec_depend>
-  <exec_depend>franka_description</exec_depend>
   <exec_depend>pluginlib</exec_depend>
   <exec_depend>moveit_core</exec_depend>
   <exec_depend>moveit_commander</exec_depend>
