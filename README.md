@@ -39,7 +39,10 @@
      sudo apt-get install ros-kinetic-moveit
      ```
 
-    2. 安装[realsense-ros](https://github.com/IntelRealSense/realsense-ros)
+2. 安装[realsense-ros](https://github.com/IntelRealSense/realsense-ros)
+
+   * realsense2_camera（相机发布图像话题）
+   * realsense2-description（包含相机urdf模型）
 
 
 

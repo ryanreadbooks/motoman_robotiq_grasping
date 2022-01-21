@@ -1,0 +1,11 @@
+# 用于开启或者停止自动抓取的服务
+# 请求：
+#   start: 是否开启自动抓取，true表示开始，false表示关闭
+#   n_object: 一共有多少个物体需要抓取
+#   max_attempts: 最多尝试多少次抓取
+bool data
+int32 n_object
+int32 max_attempts
+---
+bool success
+string message

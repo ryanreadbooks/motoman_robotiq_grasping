@@ -183,7 +183,7 @@ class PlanarGraspDetector:
         physical_grasp_width = width / self.map_size * 2 * z * np.tan(np.deg2rad(self.camera_params.fov * self.map_size / depth_img.shape[0] * 0.5))
         physical_grasp_width *= 1.1 # 稍微放宽一点
         # 最终实施抓取的夹爪张开宽度
-        physical_grasp_width_final = np.clip(physical_grasp_width, 0.0, 0.10) # 限制在最大抓取宽度内，单位m
+        physical_grasp_width_final = np.clip(physical_grasp_width, 0.0, 0.120) # 限制在最大抓取宽度内，单位m
 
         detection_log(f'angle = {angle} rad ({np.rad2deg(angle)} degrees), grasps_orientation = {grasps_orientation}, width = {physical_grasp_width_final}({physical_grasp_width})')
         detection_log(rotation_mat_cam)

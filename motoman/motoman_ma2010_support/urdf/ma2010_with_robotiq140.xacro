@@ -24,4 +24,12 @@
 	<origin xyz="0.260522 0.0 0.0" rpy="-0.006 0.008 -0.032" />
   </joint>	  
 
+  <!-- camera -->
+  <xacro:include filename="$(find realsense2_description)/urdf/_d435i.urdf.xacro"/>
+  <xacro:arg name="use_nominal_extrinsics" default="True" />
+
+  <sensor_d435 parent="grasping_frame">
+    <origin xyz="-0.24435441521426188 0.03398190911800965 0.1142620117698149" rpy="0 0 0"/>
+  </sensor_d435>
+
 </robot>

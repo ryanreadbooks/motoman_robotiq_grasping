@@ -20,6 +20,7 @@
 #include "gripper_server/gripper_reqres.h"
 #include "ma2010_server/MA2010Service.h"
 #include "ma2010_server/ma2010_reqres.h"
+#include "coordinator/AutoGrasping.h"
 
 using namespace ros;
 using geometry_msgs::Pose;
@@ -35,6 +36,7 @@ using ma2010_server::MA2010Service;
 using std_srvs::SetBool;
 using std_srvs::Trigger;
 using DetectionResultPtr = detection::DetectionResult::ConstPtr;
+using AutoGrasping = coordinator::AutoGrasping;
 
 // 需要用到的服务和话题名
 const static string MA2010_SERVICE_NAME = "/node_ma2010_service";
@@ -64,7 +66,7 @@ public:
   // 切换模式服务函数
   bool do_switch_mode_service(SetBool::Request &req, SetBool::Response &res);
   // 开始和停止运行服务函数
-  bool do_start_stop_service(SetBool::Request &req, SetBool::Response &res);
+  bool do_start_stop_service(AutoGrasping::Request &req, AutoGrasping::Response &res);
   // 调试模式下，运行一次
   bool do_debug_run_once_service(Trigger::Request &req, Trigger::Response &res);
 

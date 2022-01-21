@@ -103,6 +103,7 @@ bool Coordinator::run_once() {
 }
 
 // 启动coordinator
+// TODO 待改进
 void Coordinator::run() {
   // 在自动模式，并且已经启动
   while (ros::ok()) {
@@ -124,7 +125,7 @@ bool Coordinator::do_switch_mode_service(SetBool::Request &req, SetBool::Respons
 }
 
 // 在自动运行情况下，进行开始和结束的切换
-bool Coordinator::do_start_stop_service(SetBool::Request &req, SetBool::Response &res) {
+bool Coordinator::do_start_stop_service(AutoGrasping::Request &req, AutoGrasping::Response &res) {
   // 不是在自动模式下，不能自己动作
   if (is_debug_) {
     res.success = false;
