@@ -15,7 +15,7 @@ void check_need_throw_run_time_error(bool ret, const std::string &message) {
   }
 }
 
-Coordinator::Coordinator() {
+Coordinator::Coordinator() : auto_grasp_client_(COORDINATOR_AUTO_GRASP_ACTION_NAME, true) {
   // 初始化模式
   handle_.param<bool>(DEBUG_PARAM_NAME, is_debug_, true);
   // 初始化服务client和subscriber
@@ -23,17 +23,27 @@ Coordinator::Coordinator() {
   gripper_client_ = handle_.serviceClient<GripperService>(GRIPPER_SERVICE_NAME);
   detection_client_ = handle_.serviceClient<SetBool>(DETECTION_SERVICE_NAME);
   detection_res_sub_ = handle_.subscribe( DETECTION_TOPIC_RESULT_NAME, 5, &Coordinator::detection_result_cb, this);
+
   p_tf_listener_.reset(new tf2_ros::TransformListener(tf_buffer_));
 
   namespace HD = std::placeholders;
-  switch_mode_server_ = handle_.advertiseService(COORDINATOR_SWITCH_MODE_SERVICE_NAME,
+  switch_mode_server_ =
+      handle_.advertiseService(COORDINATOR_SWITCH_MODE_SERVICE_NAME,
                                &Coordinator::do_switch_mode_service, this);
 
-  start_auto_server_ = handle_.advertiseService(COORDINATOR_START_OR_STOP_RUNNING_NAME,
-                               &Coordinator::do_start_auto_service, this);
-
-  debug_run_once_server_ = handle_.advertiseService(COORDINATOR_DEBUG_RUN_ONCE_NAME,
+  debug_run_once_server_ =
+      handle_.advertiseService(COORDINATOR_DEBUG_RUN_ONCE_NAME,
                                &Coordinator::do_debug_run_once_service, this);
+
+  start_stop_server_ =
+      handle_.advertiseService(COORDINATOR_START_STOP_SERVICE_NAME,
+                               &Coordinator::do_start_stop_service, this);
+
+  auto_grasp_server_.reset(new AutoGraspServer(
+      handle_, COORDINATOR_AUTO_GRASP_ACTION_NAME,
+      boost::bind(&Coordinator::do_auto_grasp_action_request, this, _1),
+      false));
+  auto_grasp_server_->start();
 };
 
 // 会在子线程中回调
@@ -111,52 +121,6 @@ bool Coordinator::do_switch_mode_service(SetBool::Request &req,
   return true;
 }
 
-// 在自动运行情况下，进行开启自动抓取物体的作业
-// 其实可以改为action的通信
-bool Coordinator::do_start_auto_service(AutoGrasping::Request &req,
-                                        AutoGrasping::Response &res) {
-  // 不是在自动模式下，不能自己动作
-  if (is_debug_) {
-    res.success = false;
-    res.message = "Can not start auto running in debug mode, call service "
-                  "coordinator/switch_service and set data to false";
-    return true;
-  }
-  ros::Time st = ros::Time::now();
-  is_auto_running_ = true;
-  ROS_INFO("Triggered auto pick-and-place, number of objects to grasped is %d, "
-           "max attempts is %d",
-           req.n_object, req.max_attempts);
-  unsigned int n_cur_grasped_objs = 0; // 成功抓取的次数
-  unsigned int cur_attempt = 0;        // 当前尝试的次数
-  // 当还没有抓取完所有物体，并且还剩余抓取次数才能保持自动运行状态
-  while (n_cur_grasped_objs < req.n_object && cur_attempt <= req.max_attempts) {
-    cur_attempt++;
-    ROS_INFO("In auto running mode, now in attempt-%d", cur_attempt);
-    bool res = run_once();
-    if (!res) {
-      // 失败
-      ROS_WARN("Attempt-%d failed, completion is (%d/%d)", cur_attempt,
-               n_cur_grasped_objs, req.n_object);
-    }
-    // 成功
-    n_cur_grasped_objs++;
-    sleep(1);
-    ROS_INFO("Attempt-%d succeed, current completion is (%d/%d)", cur_attempt,
-             n_cur_grasped_objs, req.n_object);
-  }
-  res.success = true;
-  std::stringstream ss;
-  double duration = (ros::Time::now() - st).toSec();
-  ss << "Successfully grasped " << n_cur_grasped_objs << " objects out of "
-     << req.n_object << " objects in " << duration << " seconds";
-  res.message = ss.str();
-
-  ROS_INFO("Response took %.6f seconds", duration);
-  is_auto_running_ = false;
-  return true;
-}
-
 bool Coordinator::do_debug_run_once_service(Trigger::Request &req,
                                             Trigger::Response &res) {
   // 自动模式下，不能够单独call run_once
@@ -168,6 +132,102 @@ bool Coordinator::do_debug_run_once_service(Trigger::Request &req,
   // 开始run_once，返回是否执行成功
   res.success = run_once();
   res.message = res.success ? "Succeed" : "Failed";
+  return true;
+}
+
+// 在自动运行情况下，进行开启自动抓取物体的作业
+void Coordinator::do_auto_grasp_action_request(const AutoGraspServer::GoalConstPtr &goal) {
+  // 不是在自动模式下，不能自己动作
+  if (is_debug_) {
+    ac_result_.success = false;
+    ac_result_.message = "Can not start auto running in debug mode, call service "
+                        "coordinator/switch_service and set data to false";
+    auto_grasp_server_->setAborted(ac_result_, ac_result_.message);
+    return;
+  }
+  ros::Time st = ros::Time::now();
+  is_auto_running_ = true;
+  ROS_INFO("Triggered auto pick-and-place, number of objects to grasped is %d, "
+           "max attempts is %d", goal->n_object, goal->max_attempts);
+
+  unsigned int n_cur_grasped_objs = 0; // 成功抓取的次数
+  unsigned int cur_attempt = 0;        // 当前尝试的次数
+
+  // 当还没有抓取完所有物体，并且还剩余抓取次数才能保持自动运行状态
+  while (n_cur_grasped_objs < goal->n_object && cur_attempt < goal->max_attempts) {
+    cur_attempt++;
+    ROS_INFO("In auto running mode, now in attempt-%d", cur_attempt);
+    bool res = run_once();
+    if (!res) {
+      // 失败
+      ROS_WARN("Attempt-%d failed, completion is (%d/%d)", cur_attempt,
+               n_cur_grasped_objs, goal->n_object);
+    } else {
+      // 成功
+      n_cur_grasped_objs++;
+    }
+    sleep(1);
+    ROS_INFO("Attempt-%d succeed, current completion is (%d/%d)", cur_attempt,
+             n_cur_grasped_objs, goal->n_object);
+    // 组织feedback返回结果
+    ac_feedback_.n_cur_grasped = n_cur_grasped_objs;
+    ac_feedback_.n_attempts_left = goal->max_attempts - cur_attempt;
+    auto_grasp_server_->publishFeedback(ac_feedback_);
+    if (auto_grasp_server_->isPreemptRequested()) {
+      // 停止作业
+      ROS_INFO("auto_grasp_server_ PreemptRequested, auto working will stop");
+      ac_result_.success = true;
+      ac_result_.n_success = n_cur_grasped_objs;
+      ac_result_.message = "Operation stopped";
+      auto_grasp_server_->setPreempted(ac_result_, ac_result_.message);
+      is_auto_running_ = false;
+      return;
+    }
+  }
+  if (cur_attempt >= goal->max_attempts) {
+    ROS_INFO("Max attempt reached!!!");
+  }
+  ac_result_.success = true;
+  std::stringstream ss;
+  double duration = (ros::Time::now() - st).toSec();
+  ss << "Successfully grasped " << n_cur_grasped_objs << " objects out of "
+     << goal->n_object << " objects in " << duration << " seconds";
+  ac_result_.n_success = n_cur_grasped_objs;
+  ac_result_.message = ss.str();
+
+  ROS_INFO("Action took %.6f seconds", duration);
+  is_auto_running_ = false;
+  auto_grasp_server_->setSucceeded(ac_result_, ss.str());
+}
+
+bool Coordinator::do_start_stop_service(AutoOperation::Request &req, AutoOperation::Response &res) {
+  if (is_debug_) {
+    string msg = "Can not start auto running in debug mode, call service "
+                 "/coordinator/switch_service and set data to false";
+    res.success = false;
+    res.message = msg;
+    return true;
+  }
+  if (is_auto_running_ && req.data == "on") {
+    res.success = true;
+    res.message = "Already auto running";
+  } else {
+    if (req.data == "on") {
+      // 开启
+      AutoGraspGoal goal;
+      goal.n_object = req.n_object;
+      goal.max_attempts = req.max_attempts;
+      goal.data = req.data;
+      // 给action服务器发送目标
+      auto_grasp_client_.sendGoal(goal);  // 非阻塞，直接返回
+      res.message = "Start operation success";
+    } else if (req.data == "off") {
+      // 终止当前作业
+      auto_grasp_client_.cancelGoal();
+      res.message = "Stop operation requested, wait until current operation finishes";
+    }
+    res.success = true;
+  }
   return true;
 }
 

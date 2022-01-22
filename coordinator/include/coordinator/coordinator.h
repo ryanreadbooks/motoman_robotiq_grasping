@@ -7,23 +7,28 @@
 #include <iostream>
 #include <sstream>
 #include <map>
+#include <vector>
 #include <memory>
+
 #include <ros/ros.h>
 #include <std_srvs/SetBool.h>
 #include <std_srvs/Trigger.h>
 #include <string>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
-#include <vector>
+#include <actionlib/server/simple_action_server.h>
+#include <actionlib/client/simple_action_client.h>
 
 #include "detection/DetectionResult.h"
 #include "gripper_server/GripperService.h"
 #include "gripper_server/gripper_reqres.h"
 #include "ma2010_server/MA2010Service.h"
 #include "ma2010_server/ma2010_reqres.h"
-#include "coordinator/AutoGrasping.h"
+#include "coordinator/AutoGraspAction.h"
+#include "coordinator/AutoOperation.h"
 
 using namespace ros;
+using namespace coordinator;
 using geometry_msgs::Pose;
 using geometry_msgs::PoseStamped;
 using geometry_msgs::TransformStamped;
@@ -37,7 +42,8 @@ using ma2010_server::MA2010Service;
 using std_srvs::SetBool;
 using std_srvs::Trigger;
 using DetectionResultPtr = detection::DetectionResult::ConstPtr;
-using AutoGrasping = coordinator::AutoGrasping;
+using actionlib::SimpleActionClient;
+using actionlib::SimpleActionServer;
 
 // 需要用到的服务和话题名
 const static string MA2010_SERVICE_NAME = "/node_ma2010_service";
@@ -45,13 +51,23 @@ const static string GRIPPER_SERVICE_NAME = "/node_gripper_service";
 const static string DETECTION_SERVICE_NAME = "/detection/switch_service";
 const static string DETECTION_TOPIC_RESULT_NAME = "/detection/result";
 const static string COORDINATOR_SWITCH_MODE_SERVICE_NAME = "/coordinator/switch_service";
-const static string COORDINATOR_START_OR_STOP_RUNNING_NAME = "/coordinator/start_or_stop_service";
+const static string COORDINATOR_START_STOP_SERVICE_NAME = "/coordinator/start_stop_auto";
+const static string COORDINATOR_AUTO_GRASP_ACTION_NAME = "/coordinator/auto_grasp";
 const static string COORDINATOR_DEBUG_RUN_ONCE_NAME = "/coordinator/debug_run_once_service";
 
 const static string DEBUG_PARAM_NAME = "node_coordinator/debug_mode";
 
 class Coordinator {
-  enum class GripperOp { OPEN, CLOSE, GET_STATE, MANUAL };
+  using AutoGraspServer = SimpleActionServer<AutoGraspAction>;
+  using AutoGraspClient = SimpleActionClient<AutoGraspAction>;
+
+  enum class GripperOp
+  {
+    OPEN,
+    CLOSE,
+    GET_STATE,
+    MANUAL
+  };
 
 public:
   Coordinator();
@@ -64,10 +80,12 @@ public:
   bool run_once();
   // 切换模式服务函数
   bool do_switch_mode_service(SetBool::Request &req, SetBool::Response &res);
-  // 开始和停止运行服务函数
-  bool do_start_auto_service(AutoGrasping::Request &req, AutoGrasping::Response &res);
   // 调试模式下，运行一次
   bool do_debug_run_once_service(Trigger::Request &req, Trigger::Response &res);
+  // 自动抓取的action的处理函数
+  void do_auto_grasp_action_request(const AutoGraspServer::GoalConstPtr &goal);
+  // 处理开始或者停止自动作业的函数
+  bool do_start_stop_service(AutoOperation::Request &req, AutoOperation::Response &res);
 
 private:
   // 操作机械臂
@@ -102,12 +120,20 @@ private:
   ServiceClient gripper_client_;
   ServiceClient detection_client_;
   Subscriber detection_res_sub_;
+
   // 切换模式服务
   ServiceServer switch_mode_server_;
-  // 自动模式下，流程开始和停止服务
-  ServiceServer start_auto_server_;
   // 调试模式下，触发运动一次的服务
   ServiceServer debug_run_once_server_;
+  // 开启或者停止自动作业
+  ServiceServer start_stop_server_;
+  // 自动抓取的action服务器
+  shared_ptr<AutoGraspServer> auto_grasp_server_;
+  AutoGraspResult ac_result_;
+  AutoGraspFeedback ac_feedback_;
+  // action客户端
+  AutoGraspClient auto_grasp_client_;
+
   tf2_ros::Buffer tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> p_tf_listener_;
   // cache objects

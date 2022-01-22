@@ -16,13 +16,15 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   std_srvs
+  actionlib
+  actionlib_msgs
   detection
   gripper_server
   ma2010_server
 )
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS system)
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -38,20 +40,20 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  AutoGrasping.srv
+  AutoOperation.srv
 )
 
 ## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
+add_action_files(
+  FILES
+  AutoGrasp.action
+)
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
   std_msgs
+  actionlib_msgs
 )
 
 ###################################

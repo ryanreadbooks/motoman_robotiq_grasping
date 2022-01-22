@@ -1,0 +1,22 @@
+# 自动抓取的action定义
+# goal
+#   n_object 一共需要抓取多少个物体
+#   max_attempts  最多进行多少次抓取
+#   data    保留字段
+uint32 n_object
+uint32 max_attempts
+string data
+---
+# result
+#   success 是否成功
+#   n_success 成功抓取的个数
+#   message 信息
+bool success
+uint32 n_success
+string message
+---
+# feedback
+#   n_cur_grasped   当前已经抓取了多少个物体
+#   n_attempts_left 还剩余多少次抓取机会
+uint32 n_cur_grasped
+uint32 n_attempts_left
