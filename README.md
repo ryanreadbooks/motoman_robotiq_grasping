@@ -189,6 +189,54 @@ ResFail               = 400;	# failure
 
 
 
+### Coordinator功能
+
+coordinator节点有调试模式和自动运行模式，调试模式只能手动触发一次运行，自动模式可以指定需要抓取多少个物体和最多尝试多少次抓取。
+
+#### debug模式
+
+coordinator默认就在debug模式，可以通过服务`/coordinator/switch_service`进行切换
+
+```bash
+# 切换调试模式
+rosservice call /coordinator/switch_service "data: true"
+```
+
+#### 自动模式
+
+切换到自动模式后，才可以实现对多个物体的自动抓取
+
+```bash
+# 切换自动模式
+rosservice call /coordinator/switch_service "data: false"
+```
+
+通过服务`/coordinator/start_stop_auto`可以在自动模式下开启和关闭自动抓取流程
+
+> `n_object`指定一共需要抓取多少个物体 ；`max_attempts`指定最多尝试多少次抓取；`data`有两个选择，on表示开始，off表示停止
+
+##### 开始自动抓取
+
+```bash
+rosservice call /coordinator/start_stop_auto "n_object: 4
+max_attempts: 6
+data: 'on'"
+```
+
+##### 停止自动抓取
+
+```bash
+# 此时n_object和max_attempts无影响
+# 调用服务后，等待正在进行的抓取完成后会停下
+rosservice call /coordinator/start_stop_auto "n_object: 4
+max_attempts: 6
+data: 'off'"
+```
+
+
+
+
+
 ## 眼在手上标定
 
 眼在手上标定在`Docker`中进行，[镜像下载地址](https://hub.docker.com/r/rimiercivl/kinetic-desktop-full/tags)。需要提前下载安装好[Docker](https://docs.docker.com/engine/install/)和[nvidia-docker](https://github.com/NVIDIA/nvidia-docker)。
