@@ -202,6 +202,13 @@ coordinator默认就在debug模式，可以通过服务`/coordinator/switch_serv
 rosservice call /coordinator/switch_service "data: true"
 ```
 
+##### 执行一次抓取
+
+```bash
+# 执行一次抓取
+rosservice call /coordinator/debug_run_once_service "{}"
+```
+
 #### 自动模式
 
 切换到自动模式后，才可以实现对多个物体的自动抓取
@@ -232,8 +239,6 @@ rosservice call /coordinator/start_stop_auto "n_object: 4
 max_attempts: 6
 data: 'off'"
 ```
-
-
 
 
 
