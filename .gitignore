@@ -1,2 +1,4 @@
 .vscode
 /CMakeLists.txt
+*.pyc
+*/__pycache__

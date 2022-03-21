@@ -1,6 +1,6 @@
 # coding=utf-8
 """
-高度封装的检测类，只需要给定rgb或者depth信息，就返回检测到的抓取结果
+高度封装的检测类,只需要给定rgb或者depth信息,就返回检测到的抓取结果
 """
 
 import os
@@ -62,7 +62,7 @@ def detection_log(msg):
 
 class PlanarGraspDetector:
     """
-    检测类，负责二维平面抓取的检测
+    检测类,负责二维平面抓取的检测
     """
 
     def __init__(self, model_path: str, camera_params: CameraParams, use_rgb = True, n_cls=80, map_size=384) -> None:
@@ -91,8 +91,8 @@ class PlanarGraspDetector:
         """
         检测操作
 
-        :param img: rgb图，shape=(h, w, 3)
-        :param depth: 深度图，shape=(h, w), 单位m
+        :param img: rgb图,shape=(h, w, 3)
+        :param depth: 深度图,shape=(h, w), 单位m
         """
         if self.use_rgb:
             packed = pack_single_image(img=img, depth=None, device=self.device)
@@ -126,11 +126,11 @@ class PlanarGraspDetector:
         """
         生成平面抓取姿态
 
-        :param grasp_pts: 提取处的在二维图像上的抓取点， shape=(n, 2) -> [y, x]
-        :param angle_map: 角度图，shape=(h, w)
-        :param widht_map: 宽度图，shape=(h, w)
-        :param rgb_img: 原图RGB，shape=(H, W, 3)
-        :param depth_img: 深度图，shape=(H, W)
+        :param grasp_pts: 提取处的在二维图像上的抓取点, shape=(n, 2) -> [y, x]
+        :param angle_map: 角度图,shape=(h, w)
+        :param widht_map: 宽度图,shape=(h, w)
+        :param rgb_img: 原图RGB,shape=(H, W, 3)
+        :param depth_img: 深度图,shape=(H, W)
         """
         # 1. 从中选出概率最高的grasp执行
         # TODO 可能要更加合理的grasp selection scheme
@@ -145,7 +145,7 @@ class PlanarGraspDetector:
         top = 240 - self.map_size // 2 # (480 // 2 - self.map_size // 2)
         y_raw, x_raw = top + y, left + x
         rgb_img = cv2.circle(rgb_img, (x_raw, y_raw), radius=5, color=(255, 0, 0), thickness=cv2.FILLED)
-        # 得到深度，单位化为m
+        # 得到深度,单位化为m
         z = depth_img[y_raw, x_raw] / 1000.0
         # 抓取点转到相机坐标系下
         x_cam = (x_raw - self.camera_params.cx) * z / self.camera_params.fx
@@ -153,7 +153,7 @@ class PlanarGraspDetector:
         grasp_point_cam_3d = np.array([x_cam, y_cam, z])
         detection_log(f'detection result on image: x_raw = {x_raw}, y_raw={y_raw}, z={z}')
         detection_log(f'detection result on camera coordinate: x = {x_cam}, y={y_cam}, z={z}')
-        # TODO 末端姿态按照抓取点的法向量来，现在暂时不用法向量
+        # TODO 末端姿态按照抓取点的法向量来,现在暂时不用法向量
         # 这里depth_scale给1,因为外面已经scale过了depth了
         # cloud = raw_generate_pc(rgb=rgb_img, depth=depth_img, depth_scale=1000.0, cam_intrin=self.camera_params.to_matrix())
         # if cloud.is_empty():
@@ -167,13 +167,13 @@ class PlanarGraspDetector:
         # cloud.normalize_normals()
         # cloud.orient_normals_towards_camera_location()  # 法向量指向相机位置
 
-        # 为抓取点找到点云中最近的点，并且取出法向量
+        # 为抓取点找到点云中最近的点,并且取出法向量
         # tree = KDTree(np.asarray(cloud.points), leafsize=16)
         # distances, indices = tree.query(grasp_point_cam_3d, k=1, workers=4)
         # cloud_normals = np.asarray(cloud.normals)
         # grasps_orientation = -cloud_normals[indices]    # (3,)
 
-        # TODO 存在问题： top-down grasping, 在moveit里面，x轴朝下了
+        # TODO 存在问题： top-down grasping, 在moveit里面,x轴朝下了
         grasps_orientation = np.array([1., 0., 0.])
         gripper_frame_cam = GripperFrame.init(grasp_point_cam_3d, grasps_orientation, -angle - np.pi / 2)
         grasp_pose_cam = gripper_frame_cam.to_6dpose()
@@ -183,11 +183,11 @@ class PlanarGraspDetector:
         physical_grasp_width = width / self.map_size * 2 * z * np.tan(np.deg2rad(self.camera_params.fov * self.map_size / depth_img.shape[0] * 0.5))
         physical_grasp_width *= 1.1 # 稍微放宽一点
         # 最终实施抓取的夹爪张开宽度
-        physical_grasp_width_final = np.clip(physical_grasp_width, 0.0, 0.120) # 限制在最大抓取宽度内，单位m
+        physical_grasp_width_final = np.clip(physical_grasp_width, 0.0, 0.120) # 限制在最大抓取宽度内,单位m
 
         detection_log(f'angle = {angle} rad ({np.rad2deg(angle)} degrees), grasps_orientation = {grasps_orientation}, width = {physical_grasp_width_final}({physical_grasp_width})')
         detection_log(rotation_mat_cam)
-        # 往前前进1cm，得到最终夹爪末端TCP应该到达的位置
+        # 往前前进1cm,得到最终夹爪末端TCP应该到达的位置
         tcp_position_cam = grasp_point_cam_3d + rotation_mat_cam[:, -1] * 0.01
         
         return tcp_position_cam, angle, rotation_mat_cam, physical_grasp_width_final, rgb_img

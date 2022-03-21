@@ -3,7 +3,7 @@
 
 
 """
-检测节点 - 负责进行抓取检测，与realsense相机直接打交道
+检测节点 - 负责进行抓取检测,与realsense相机直接打交道
 """
 
 import sys
@@ -45,7 +45,7 @@ tf_broadcaster = tf2_ros.TransformBroadcaster()
 
 def subscribe_rgb(rgb: Image):
     """
-    回调函数，将话题中的rgb图像放入全局双端队列中
+    回调函数,将话题中的rgb图像放入全局双端队列中
     """
     global _rgb_queue
     _rgb_queue.append(rgb)
@@ -53,7 +53,7 @@ def subscribe_rgb(rgb: Image):
 
 def subscribe_depth(depth: Image):
     """
-    回调函数，将话题中的depth图像放入全局双端队列中
+    回调函数,将话题中的depth图像放入全局双端队列中
     """
     global _depth_queue
     _depth_queue.append(depth)
@@ -79,8 +79,8 @@ def infer():
     """
     进行检测流程
 
-    :param: color np.ndarray格式的RGB图片，shape=(H, W, 3)
-    :param: depth np.ndarray格式的depth图片，shape=(H, W)
+    :param: color np.ndarray格式的RGB图片,shape=(H, W, 3)
+    :param: depth np.ndarray格式的depth图片,shape=(H, W)
     """
     # 从队列中取数据
     result_msg = DetectionResult()
