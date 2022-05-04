@@ -137,7 +137,7 @@ class PlanarGraspDetector:
         selected_grasp = grasp_pts[0]   # 第一个就是概率最高的点
         y, x = selected_grasp
         angle = self.angles_table[angle_map[y, x]]  # rad
-        width = width_map[y, x] * 200   # pixel
+        width = width_map[y, x] * 150   # pixel
         
         # 2. 将grasp转化到相机坐标系下
         # selected_grasp转回原图坐标系（h=480, w=640）

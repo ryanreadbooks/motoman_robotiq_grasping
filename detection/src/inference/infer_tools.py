@@ -107,7 +107,7 @@ def decode_graspmap(graspness, angle, width, original_img, angles_table, n_grasp
     original_img_for_drawing = copy.deepcopy(original_img)
     for (r, c) in pred_pts:
         angle_value = angles_table[angle[r, c]]  # rad
-        width_value = width[r, c] * 200  # pixel
+        width_value = width[r, c] * 150  # pixel
         grasp = GraspInLine(x=c, y=r, width=width_value, angle=angle_value, shape=(h, w), corners=None)
         original_img_for_drawing = grasp.draw_on_img(original_img_for_drawing)
 

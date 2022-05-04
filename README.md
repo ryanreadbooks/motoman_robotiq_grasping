@@ -143,7 +143,7 @@ roslaunch ma2010_robotiq_moveit_config moveit_planning_execution.launch robot_ip
 2. 通过`rosservice call` 命令调用服务`/node_gripper_service`，指定请求码等参数
 
    ```bash
-   rosservice call /ryan/node_gripper_service "{reqcode: 2000, position: 0.10, speed: 0.5, force: 1.0, comment: ''}"
+   rosservice call /node_gripper_service "{reqcode: 2000, position: 0.10, speed: 0.5, force: 1.0, comment: ''}"
    ```
 
 **reqcode说明**：
