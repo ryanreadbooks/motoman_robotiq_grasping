@@ -1,0 +1,19 @@
+# ma2010_server对外提供的服务类型定义
+# 请求：
+#  reqcode: 请求码
+#  target: 目标位姿
+#  data: 请求参数(备用)
+# 响应：
+#  reqcode: 请求码会原封不动返回
+#  rescode: 响应码
+#  custate: 响应时机械臂的位姿
+#  data: 响应数据
+
+int32 reqcode
+geometry_msgs/Pose target
+string data
+---
+int32 reqcode
+int32 rescode
+geometry_msgs/PoseStamped curstate
+string data

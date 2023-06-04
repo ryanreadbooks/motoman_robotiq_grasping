@@ -1,0 +1,17 @@
+numpy
+pytorch
+open3d
+pytransform3d
+scikit-image
+scikit-learn
+scipy
+opencv-python
+pillow
+msgpack-numpy
+lmdb
+h5py
+pyserial
+pymodbus
+matplotlib
+graspnetAPI
+git+git://github.com/erikwijmans/Pointnet2_PyTorch.git#egg=pointnet2_ops&subdirectory=pointnet2_ops_lib

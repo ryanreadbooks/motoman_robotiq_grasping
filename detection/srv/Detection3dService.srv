@@ -1,0 +1,17 @@
+# node_detection_3d节点的服务
+# 请求:
+#   trigger: 为true则请求进行一次检测
+#   data: 保留字段
+# ---
+# 响应:
+#   success: 标志是否检测成功 
+#   transformation: 检测成功时相机坐标系和抓取坐标系的转换关系
+#   grasp_width: 抓取宽度, 单位m
+#   message: 检测结果信息
+bool trigger
+string data
+---
+bool success 
+geometry_msgs/TransformStamped transformation
+float32 grasp_width
+string message

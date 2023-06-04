@@ -1,0 +1,22 @@
+# PredefinedMotion.srv
+# 定义了一个action：这个action可以使得系统按照指定的位置和指定的动作自动运行
+# 将这些预定义动作的集合记作 预动作，预动作保存在一个预动作文件中
+# 每次调用action的时候，需要传入这个预动作文件的文件名
+
+# goal
+#   filename 预动作文件的文件名
+#   data (reserved) 为保留项，可以后序扩展使用
+string filename
+string data
+---
+# result
+#   success 表示是否执行成功
+#   message 表示执行结果的信息，可以携带成功执行的信息或者执行失败的原因
+bool success
+string message
+---
+# feedback 返回中间反馈情况
+#   index 表示当前执行到第几步了，索引的从1开始
+#   message 携带反馈信息
+int32 index
+string message 

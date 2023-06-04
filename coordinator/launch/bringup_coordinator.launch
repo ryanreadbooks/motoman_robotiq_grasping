@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- usage: roslaunch coordinator bringup_coordinator.launch debug:=true/false  -->
+    <arg name="debug" default="true" doc="Set coordinator into debug mode"/>
+    <arg name="method" default="spatial" doc="Which detection method is using now (spatial or planar). Different methods lead to different behaviours." />
+    <arg name="origin" default="1#" doc="Specify the detection origin. (1# or 2#)" />
+    
+    <node name="node_coordinator" pkg="coordinator" type="node_coordinator"  output="screen" respawn="false" >
+        <param name="debug_mode" value="$(arg debug)"/>
+        <param name="detection_method" value="$(arg method)" />
+        <param name="detection_origin" value="$(arg origin)" />
+    </node>
+
+</launch>

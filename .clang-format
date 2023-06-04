@@ -1,0 +1,9 @@
+---
+Language:        Cpp
+BasedOnStyle:  Google
+ColumnLimit :  110
+AlignTrailingComments : true
+AllowShortBlocksOnASingleLine : false
+AllowShortCaseLabelsOnASingleLine : false
+AllowShortFunctionsOnASingleLine : Empty
+AlignOperands: true

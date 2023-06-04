@@ -1,0 +1,12 @@
+# TagStatusApi.srv 定义了记录机械臂当前状态的服务
+# 请求：
+#   opcode 请求码：可以有添加，删除，查询三种
+#   name：需要操作的状态的名字
+int32 opcode
+string name
+---
+# 响应
+#   bool 操作是否成功
+#   message 操作的结果信息
+bool success
+string message

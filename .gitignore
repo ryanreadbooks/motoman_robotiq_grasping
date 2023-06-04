@@ -1,0 +1,16 @@
+.vscode
+/CMakeLists.txt
+*.pyc
+*/__pycache__
+__pycache__
+caches
+*.pcd
+*.npy
+*.pth
+*.tar
+.TODO
+coordinator/repository/*
+!coordinator/repository/README.md
+detection/src/inference/ckpt/*
+!detection/src/inference/ckpt/README.md
+LOG
