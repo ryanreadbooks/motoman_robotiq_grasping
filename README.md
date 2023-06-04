@@ -2,7 +2,37 @@
 
 **功能：在ROS平台上，使用realsense相机引导安川MA2010机械臂用Robotiq 2F-140夹爪进行抓取**
 
-[TOC]
+- [安川MA2010机械臂 + Robotiq 2F-140 + RealSense 视觉抓取](#安川ma2010机械臂--robotiq-2f-140--realsense-视觉抓取)
+  - [0. 操作注意事项](#0-操作注意事项)
+  - [1. 前提条件](#1-前提条件)
+    - [1.1. 软件条件](#11-软件条件)
+    - [1.2. 硬件条件](#12-硬件条件)
+  - [2. 软件安装](#2-软件安装)
+    - [2.1. 前置软件条件](#21-前置软件条件)
+    - [2.2. 硬件驱动](#22-硬件驱动)
+    - [2.3. 安装本仓库](#23-安装本仓库)
+  - [3. 安川驱动测试](#3-安川驱动测试)
+    - [3.1. 官方的功能包测试](#31-官方的功能包测试)
+    - [3.2. 用带有robotiq夹爪的机械臂测试](#32-用带有robotiq夹爪的机械臂测试)
+  - [4. 各节点功能介绍](#4-各节点功能介绍)
+    - [4.1. Robotiq夹爪功能](#41-robotiq夹爪功能)
+    - [4.2. MA2010 Server功能](#42-ma2010-server功能)
+    - [4.3. Coordinator功能](#43-coordinator功能)
+      - [4.3.1. debug模式](#431-debug模式)
+        - [4.3.1.1. 执行一次抓取](#4311-执行一次抓取)
+        - [4.3.1.2. 控制机械臂只前往目标抓取点而不执行抓取操作](#4312-控制机械臂只前往目标抓取点而不执行抓取操作)
+        - [4.3.1.3. 获取抓取位姿的快照](#4313-获取抓取位姿的快照)
+      - [4.3.2. auto模式](#432-auto模式)
+        - [4.3.2.1. 自动抓取](#4321-自动抓取)
+          - [开始自动抓取](#开始自动抓取)
+          - [停止自动抓取](#停止自动抓取)
+        - [4.3.2.2. 预定义动作](#4322-预定义动作)
+      - [4.3.3. 状态记录](#433-状态记录)
+    - [4.4. 检测功能](#44-检测功能)
+        - [启动检测节点](#启动检测节点)
+  - [5. 眼在手上标定](#5-眼在手上标定)
+  - [致谢/参考资料](#致谢参考资料)
+
 
 ---
 
@@ -20,19 +50,19 @@
 
 ### 1.1. 软件条件
 
-**系统：**Ubuntu16.04 + ROS kinetic
+系统：Ubuntu16.04 + ROS kinetic
 
-**语言：**Python3.7 + CPP
+语言：Python3.7 + CPP
 
 ### 1.2. 硬件条件
 
-**机械臂：**安川MA2010机械臂
+机械臂：安川MA2010机械臂
 
-**相机：**Intel RealSense D435i
+相机：Intel RealSense D435i
 
-**二指夹持器：**Robotiq 2F-140
+二指夹持器：Robotiq 2F-140
 
-**其它：**双绞线、USB线、万用表等
+其它：双绞线、USB线、万用表等
 
 
 
@@ -94,7 +124,7 @@
    source devel/setup.bash
    ```
    
-5. 安装`requirements.txt`文件中有需要用到的py第三方依赖。
+5. 安装`requirements.txt`文件中有需要用到的py第三方依赖。（根据自己的需求选择性安装）
 
    ```bash
    pip install -r requirements.txt
@@ -271,17 +301,17 @@ rosservice call /coordinator/snapshot_api "{}"
 
 ```bash
 # 切换自动模式
-rosservice call /coordinator/switch_service "data: false"
+rosservice call /coordinator/switch_mode_api "data: false"
 ```
 
-通过服务 `/coordinator/start_stop_auto`可以在自动模式下开启和关闭自动抓取流程
+通过服务 `/coordinator/auto_grasp_api`可以在自动模式下开启和关闭自动抓取流程
 
 > `n_object`指定一共需要抓取多少个物体 ；`max_attempts`指定最多尝试多少次抓取；`data`有两个选择，on表示开始，off表示停止
 
 ###### 开始自动抓取
 
 ```bash
-rosservice call /coordinator/start_stop_auto "n_object: 4
+rosservice call /coordinator/auto_grasp_api "n_object: 4
 max_attempts: 6
 data: 'on'"
 ```
@@ -291,7 +321,7 @@ data: 'on'"
 ```bash
 # 此时n_object和max_attempts无影响
 # 调用服务后，等待正在进行的抓取完成后会停下
-rosservice call /coordinator/start_stop_auto "n_object: 4
+rosservice call /coordinator/auto_grasp_api "n_object: 4
 max_attempts: 6
 data: 'off'"
 ```
@@ -311,22 +341,22 @@ data: 'on'"
 
 在<u>预动作文件</u>中，每一行表示一个动作命令，文件必须以**CMDSTART**作为第一行，以**CMDEND**作为最后一行。支持的动作命令如下：
 
-* CMDSTART：预动作文件开头
-* CMDEND：预动作文件结尾
-* MOVETO
+* `CMDSTART`：预动作文件开头
+* `CMDEND`：预动作文件结尾
+* `MOVETO`
   * 作用：将机械臂移动到某个位置
-  * 语法：MOVETO POSITION
-  * POSITION表示移动目标，这个目标可以为内置的目标，也可以是已经存在的状态的名字。（见[状态记录](#4.3.3. 状态记录)）
-  * 其中支持两个内置目标：DetectionOrigin和Destination
-* PAUSEFOR
+  * 语法：`MOVETO POSITION`
+  * `POSITION`表示移动目标，这个目标可以为内置的目标，也可以是已经存在的状态的名字。（见[状态记录](#4.3.3. 状态记录)）
+  * 其中支持两个内置目标：`DetectionOrigin`和`Destination`
+* `PAUSEFOR`
   * 作用：停止一段时间
-  * 语法：PAUSEFOR MILLSECONDS
-  * MILLSECONDS的单位为毫秒
-* GRASPOPEN
+  * 语法：`PAUSEFOR MILLSECONDS`
+  * `MILLSECONDS`的单位为毫秒
+* `GRASPOPEN`
   * 作用：打开夹持器
-* GRASPCLOSE
+* `GRASPCLOSE`
   * 作用：关闭夹持器
-* LIFTUP
+* `LIFTUP`
   * 作用：机械臂在z轴方向上升固定距离
 
 一个示例的<u>预动作文件</u>为：
@@ -373,11 +403,11 @@ TAG_SERVICE_QUERY 	= 8020	# 查询已有的状态
 可以选择多种检测方法进行抓取姿态检测（一次只能选择一种）
 
 ```bash
-roslaunch detection bringup_detection.launch planar:=true			# 启动平面抓取检测
+roslaunch detection bringup_detection.launch planar:=true		# 启动平面抓取检测
 # or
 roslaunch detection bringup_detection.launch planar_grconv:=true	# 启动GRConvNet平面抓取检测
 # or
-roslaunch detection bringup_detection.launch gn1b:=true				# 启动GN1B方法进行6D抓取检测
+roslaunch detection bringup_detection.launch gn1b:=true			# 启动GN1B方法进行6D抓取检测
 ```
 
 
@@ -424,11 +454,13 @@ source /etc/profile
 
 
 
-## 致谢
+## 致谢/参考资料
 
 * [ros-industrial/motoman](https://github.com/ros-industrial/motoman)
 * [Danfoa/robotiq_2finger_grippers](https://github.com/Danfoa/robotiq_2finger_grippers)
 * [Nomango/configor](https://github.com/Nomango/configor)
 * [easy_handeye](https://github.com/IFL-CAMP/easy_handeye)
 * [easy_aruco](https://github.com/marcoesposito1988/easy_aruco)
+* [graspnet-baseline](https://github.com/graspnet/graspnet-baseline)
+* [robotic-grasping](https://github.com/skumra/robotic-grasping)
 
