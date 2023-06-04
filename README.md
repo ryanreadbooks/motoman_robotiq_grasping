@@ -386,16 +386,16 @@ roslaunch detection bringup_detection.launch gn1b:=true				# 启动GN1B方法进
 
 眼在手上标定在 `Docker`中进行，[镜像下载地址](https://hub.docker.com/r/rimiercivl/kinetic-desktop-full/tags)。需要提前下载安装好[Docker](https://docs.docker.com/engine/install/)和[nvidia-docker](https://github.com/NVIDIA/nvidia-docker)。
 
-1. 包含手眼标定的代码在分支[calibration](https://github.com/ryanreadbooks/motoman_robotiq_grasping/tree/calibration)中，clone了本仓库后，可以使用 `git checkout calibration`命令切换到分支。
-
-2. 启动镜像
+1. 启动镜像
 
 ```bash
 chmod +x ./docker_run.bash
 ./docker_run.bash
 ```
 
-3. 进入容器后，本仓库的代码所在路径为：`/codes/demo_ws`
+2. 进入容器后，本仓库的代码所在路径为：`/codes/demo_ws`
+
+3. `git checkout calibration`命令切换到分支
 
 ```bash
 cd /codes/demo_ws
