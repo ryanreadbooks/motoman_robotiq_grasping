@@ -94,13 +94,13 @@
 
 1. 创建工作空间
    ```bash
-   mkdir -p demo_ws/src
-   cd demo/src
-   catkin_init_workspace
+   mkdir demo_ws
    ```
-2. 将项目clone下来
+2. 将项目clone下来并初始化工作空间
    ```bash
-   git clone --recursive https://github.com/ryanreadbooks/motoman_robotiq_grasping.git
+   cd demo_ws
+   git clone --recursive https://github.com/ryanreadbooks/motoman_robotiq_grasping.git src
+   cd src && catkin_init_workspace
    ```
 3. 相关依赖的安装
    ```bash
@@ -111,7 +111,7 @@
    ```bash
    # 由于项目使用python3,所以需要指定python3路径进行编译，向下面这样，如果你是其它路径，则替换下面三个路径
    # /path/to/your路径一般来说是你的python3安装路径
-   # 分别在bin、include、lib三个子目录中，找到python、python3.Xm、libpython3.Xm.so三个文件（3.X为python的版本)
+   # 分别在bin、include、lib三个子目录中，找到python、python3.Xm、libpython3.Xm.so三个文件 （3.X为python的版本）
    catkin config -DPYTHON_EXECUTABLE=/path/to/your/bin/python 
    			  -DPYTHON_INCLUDE_DIR=/path/to/your/include/python3.7m 
    			  -DPYTHON_LIBRARY=/path/to/your/lib/libpython3.7m.so
@@ -119,7 +119,7 @@
    catkin config --no-install 
    # 用catkin build进行编译
    catkin build -DSETUPTOOLS_DEB_LAYOUT=OFF
-   # (可以额外指定一些其它的编译选项，比如：-DCMAKE_BUILD_TYPE=Debug或Release -DCATKIN_ENABLE_TESTING=OFF）
+   # （可以额外指定一些其它的编译选项，比如：-DCMAKE_BUILD_TYPE=Debug或Release -DCATKIN_ENABLE_TESTING=OFF）
    # 激活
    source devel/setup.bash
    ```
@@ -346,7 +346,7 @@ data: 'on'"
 * `MOVETO`
   * 作用：将机械臂移动到某个位置
   * 语法：`MOVETO POSITION`
-  * `POSITION`表示移动目标，这个目标可以为内置的目标，也可以是已经存在的状态的名字。（见[状态记录](#4.3.3. 状态记录)）
+  * `POSITION`表示移动目标，这个目标可以为内置的目标，也可以是已经存在的状态的名字。（见[状态记录](#433-状态记录)）
   * 其中支持两个内置目标：`DetectionOrigin`和`Destination`
 * `PAUSEFOR`
   * 作用：停止一段时间
